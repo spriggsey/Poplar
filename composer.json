@@ -1,0 +1,36 @@
+{
+    "name": "askewbrook/poplar",
+    "license": "proprietary",
+    "description": "Core development dependency for Populus framework",
+    "type": "Framework",
+    "authors": [
+        {
+            "name": "Askew Brook",
+            "email": "team@askewbrook.com",
+            "homepage": "https://www.askewbrook.com",
+            "role": "Team"
+        },
+        {
+            "name": "Jack Spriggs",
+            "email": "jack@askewbrook.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "filp/whoops": "^2.1",
+        "symfony/var-dumper": "^3.3",
+        "whoops/soap": "^1.0",
+        "tightenco/collect": "^5.5"
+    },
+    "autoload": {
+        "files": [
+            "src/Poplar/Support/helpers.php"
+        ],
+        "psr-4": {
+            "Poplar\\": "src/Poplar"
+        }
+    }
+}
