@@ -1,2 +1,2 @@
-# poplar
-Core internal of Populus
+# Poplar
+Core development dependency for Populus framework
