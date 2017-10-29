@@ -3,6 +3,7 @@
     "license": "proprietary",
     "description": "Core development dependency for Populus framework",
     "type": "Framework",
+    "minimum-stability" : "dev",
     "authors": [
         {
             "name": "Askew Brook",
@@ -18,16 +19,13 @@
     ],
     "require": {
         "php": ">=7.0",
-        "ext-mbstring": "*",
-        "ext-openssl": "*",
         "filp/whoops": "^2.1",
         "symfony/var-dumper": "^3.3",
-        "whoops/soap": "^1.0",
-        "tightenco/collect": "^5.5"
+        "vlucas/phpdotenv": "^2.4"
     },
     "autoload": {
         "files": [
-            "src/Poplar/Support/helpers.php"
+            "/src/Poplar/helpers.php"
         ],
         "psr-4": {
             "Poplar\\": "src/Poplar"

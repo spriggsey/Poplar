@@ -4,6 +4,6 @@
 namespace Poplar\Support;
 
 
-class Collection {
+class Collection extends \Illuminate\Support\Collection {
 
 }
