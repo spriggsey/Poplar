@@ -4,11 +4,17 @@
 namespace Poplar;
 
 use Dotenv\Dotenv;
+use Dotenv\Exception\ValidationException;
+use Poplar\Exceptions\ConfigException;
 
 class Config {
 
     private static $config_storage;
     private static $environment_variables;
+    private static $env_required_vars = [
+        'APP_NAME',
+        'APP_ENV',
+    ];
     private        $config_dir = '';
     private        $config_files;
 
@@ -39,7 +45,13 @@ class Config {
     }
 
     private function storeEnvironmentVariables($environment_path) {
-        $environment_variables = (new Dotenv($environment_path))->load();
+        $dotenv = new Dotenv($environment_path);
+        $environment_variables = $dotenv->safeLoad();
+        try {
+            $dotenv->required(self::$env_required_vars);
+        } catch (ValidationException $e) {
+            throw new ConfigException();
+        }
         // we need to explode them out and store them
         array_map(function ($environment_var) {
             $exploded_var                                  = explode('=', $environment_var);

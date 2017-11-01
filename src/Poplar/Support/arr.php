@@ -4,6 +4,6 @@
 namespace Poplar\Support;
 
 
-class arr {
+class arr extends \Illuminate\Support\Arr {
 
 }

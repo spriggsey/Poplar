@@ -41,10 +41,15 @@ if ( ! function_exists('dd')) {
                 // echo out a json object if we can
                 header('Content-Type: application/json');
                 echo json_encode($x);
-            } else {
-                echo '<pre>';
-                var_dump($x);
-                echo '</pre>';
+            }
+
+            elseif ($x instanceof \Illuminate\Support\Collection) {
+                header('Content-Type: application/json');
+                echo $x->toJson();
+            }
+
+            else {
+                dump($x);
             }
         }, func_get_args());
         die;
@@ -81,6 +86,28 @@ if ( ! function_exists('array_get')) {
         foreach ($path as $key) {
             $temp = isset($temp[$key]) ? $temp[$key] : NULL;
         }
+
         return $temp;
+    }
+}
+if ( ! function_exists('view')) {
+    /**
+     * @param            $url - this will always point to views folder
+     * @param bool|array $values
+     *
+     * @return array|string
+     */
+    function view($url, $values = FALSE) {
+        $url = trim($url, '/');
+        if ($values) {
+            return [\Poplar\Application::basePath() . "/resources/views/{$url}.view.php", $values];
+        } else {
+            return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
+        }
+    }
+}
+if ( ! function_exists('collect')) {
+    function collect($array) {
+        return new \Poplar\Support\Collection($array);
     }
 }

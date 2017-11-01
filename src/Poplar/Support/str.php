@@ -3,7 +3,6 @@
 
 namespace Poplar\Support;
 
-
 class str {
 
 }

@@ -21,7 +21,8 @@
         "php": ">=7.0",
         "filp/whoops": "^2.1",
         "symfony/var-dumper": "^3.3",
-        "vlucas/phpdotenv": "^2.4"
+        "vlucas/phpdotenv": "^2.4",
+        "tightenco/collect": "dev-master"
     },
     "autoload": {
         "files": [
