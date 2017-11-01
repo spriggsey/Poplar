@@ -3,10 +3,9 @@
 
 namespace Poplar;
 
-
-use Poplar\Support\Collection;
-use Whoops\Handler\JsonResponseHandler;
-use Whoops\Handler\PrettyPageHandler;
+use Whoops\Handler\JsonResponseHandler as WhoopsJson;
+use Whoops\Handler\PrettyPageHandler as WhoopsPretty;
+use Whoops\Run as Whoops;
 
 class Application {
 
@@ -34,13 +33,13 @@ class Application {
      * @return bool
      */
     private function loadWhoops() {
-        $whoops = new \Whoops\Run();
+        $whoops = new Whoops();
         // we need to have different handlers depending on web or API
         if (env('APP_ENV') === 'dev') {
             if (Request::isAJAX()) {
-                $whoops->pushHandler(new JsonResponseHandler());
+                $whoops->pushHandler(new WhoopsJson());
             } else {
-                $whoops->pushHandler(new PrettyPageHandler());
+                $whoops->pushHandler(new WhoopsPretty());
             }
         } else {
             // give a generic page
