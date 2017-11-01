@@ -70,7 +70,7 @@ class Request {
     }
 
     public static function queryString() {
-        return $_SERVER['QUERY_STRING'];
+        return $_SERVER['QUERY_STRING']??null;
     }
 
     public static function isAJAX() {

@@ -3,6 +3,7 @@
 
 namespace Poplar;
 
+use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;
 use Whoops\Handler\PrettyPageHandler as WhoopsPretty;
 use Whoops\Run as Whoops;
@@ -15,11 +16,6 @@ class Application {
     private        $whoops;
 
     public function __construct($directory) {
-        error_reporting(E_ALL);
-        ini_set('display_errors', TRUE);
-        ini_set('display_startup_errors', TRUE);
-
-
         self::$base_path = $directory;
         // init up the request static class
         Request::init();
@@ -65,6 +61,20 @@ class Application {
     }
 
     public function output() {
-        // run the routing system here and return a view/data
+        try {
+            $router = Router::load('main.routes.php')->pathFind();
+
+            if ( ! View::process($router)) {
+                throw new \Exception('View Processing failed');
+            }
+            require View::getViewFile();
+        } catch (\Exception $e) {
+            http_response_code(404);
+            if (Config::get('app.debug_mode')) {
+                dd($e);
+            }
+            include view('404');
+        }
+
     }
 }

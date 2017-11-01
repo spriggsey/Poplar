@@ -1,4 +1,7 @@
 <?php
+
+use Poplar\Support\str;
+
 if ( ! function_exists('is_assoc')) {
     function is_assoc($array) {
         $array = array_keys($array);
@@ -8,7 +11,29 @@ if ( ! function_exists('is_assoc')) {
 }
 if ( ! function_exists('env')) {
     function env($key, $default = NULL) {
-        return \Poplar\Config::env($key, $default);
+        $value = \Poplar\Config::env($key, $default);
+        if ($value === FALSE) {
+            return value($default);
+        }
+        switch (strtolower($value)) {
+            case 'true':
+            case '(true)':
+                return TRUE;
+            case 'false':
+            case '(false)':
+                return FALSE;
+            case 'empty':
+            case '(empty)':
+                return '';
+            case 'null':
+            case '(null)':
+                return;
+        }
+        if (Str::startsWith($value, '"') && Str::endsWith($value, '"')) {
+            return substr($value, 1, -1);
+        }
+
+        return $value;
     }
 }
 if ( ! function_exists('config')) {
@@ -41,14 +66,10 @@ if ( ! function_exists('dd')) {
                 // echo out a json object if we can
                 header('Content-Type: application/json');
                 echo json_encode($x);
-            }
-
-            elseif ($x instanceof \Illuminate\Support\Collection) {
+            } elseif ($x instanceof \Illuminate\Support\Collection) {
                 header('Content-Type: application/json');
                 echo $x->toJson();
-            }
-
-            else {
+            } else {
                 dump($x);
             }
         }, func_get_args());
@@ -81,13 +102,7 @@ if ( ! function_exists('class_basename')) {
 
 if ( ! function_exists('array_get')) {
     function array_get($array, $path) {
-        $path = explode('.', $path); //if needed
-        $temp = &$array;
-        foreach ($path as $key) {
-            $temp = isset($temp[$key]) ? $temp[$key] : NULL;
-        }
-
-        return $temp;
+        return \Illuminate\Support\Arr::get($array, $path);
     }
 }
 if ( ! function_exists('view')) {
@@ -98,6 +113,8 @@ if ( ! function_exists('view')) {
      * @return array|string
      */
     function view($url, $values = FALSE) {
+        // convert dot notation to slashes
+        $url = str_replace('.', '/', $url);
         $url = trim($url, '/');
         if ($values) {
             return [\Poplar\Application::basePath() . "/resources/views/{$url}.view.php", $values];

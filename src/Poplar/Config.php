@@ -20,8 +20,8 @@ class Config {
 
     public function __construct() {
         $this->config_dir   = base_path().'/config';
-        $this->loadConfigurationFiles();
         $this->storeEnvironmentVariables(base_path().'/');
+        $this->loadConfigurationFiles();
     }
 
     public function storeConfig(string $file_path) {
@@ -46,7 +46,7 @@ class Config {
 
     private function storeEnvironmentVariables($environment_path) {
         $dotenv = new Dotenv($environment_path);
-        $environment_variables = $dotenv->safeLoad();
+        $environment_variables = $dotenv->load();
         try {
             $dotenv->required(self::$env_required_vars);
         } catch (ValidationException $e) {

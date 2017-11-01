@@ -4,6 +4,7 @@
 namespace Poplar\Routing;
 
 
+use Poplar\Application;
 use Poplar\Exceptions\ModelException;
 use Poplar\Exceptions\RouterException;
 use Poplar\Input;
@@ -33,7 +34,7 @@ class Router {
      */
     public static function load($file) {
         $router = new static;
-        require __DIR__ . "/../routes/$file";
+        require Application::basePath() . "/routes/$file";
 
         return $router;
     }
