@@ -130,7 +130,6 @@ class Router {
 
             foreach ($positions as $pos) {
                 $trimmed_var = trim($route_info['vars'][$pos], '{}');
-
                 // check for model bindings on this var
                 if ($model_bound && isset($model_bound->$trimmed_var)) {
                     // we then need to pass the value from the uri to the object
@@ -143,17 +142,25 @@ class Router {
             }
 
         }
+
+
         // if the route controller is simply a callback function, then give that instead.
         if (is_callable($route_info['controller'])) {
             return $route_info['controller']($vars);
         }
         // now we need to instantiate the class given by the route
-        $cont_string      = "App\\Controllers\\" . $route_info['controller'];
-        $controller_class = new $cont_string;
+        $controller_string = "App\\Controllers\\" . $route_info['controller'];
 
-        return call_user_func_array([$controller_class, $route_info['function']], $vars);
+        $parsed_vars      = $this->buildCalledVars($vars, $controller_string, $route_info);
+        $controller_class = new $controller_string;
+
+        return call_user_func_array([
+            $controller_class,
+            $route_info['function']
+        ], $parsed_vars);
 
     }
+
 
     /**
      * @param Model      $model
@@ -164,13 +171,40 @@ class Router {
      */
     private function buildModel($model, $id) {
         try {
-            $model->id = $id;
-            $model->read();
+            $model->find($id);
         } catch (ModelException $e) {
             throw new ModelException($e);
         }
 
         return $model;
+    }
+
+    private function buildCalledVars($vars, $controller_string, $route_info) {
+        // we need to check if the function demands the request var
+        // we can do this by looking at the functions arguments
+        $class_reflect = new \ReflectionClass($controller_string);
+        $parsed_vars   = [];
+        // build the list of parameters this object needs and see if it requires Request
+        foreach (
+            $class_reflect->getMethod($route_info['function'])->getParameters() as $key => $parameter
+        ) {
+            if ($parameter->hasType()
+                && $parameter->getClass()->getShortName() === 'Request'
+            ) {
+                // we need to build the request object and pass it to the func
+                $parsed_vars[] = (new Request());
+            } elseif ($parameter->hasType() && $parameter->getClass()) {
+                // look for a variable in the list that matches the one asked for
+                $filtered_var  = array_filter($vars, function (Model $array) use ($parameter) {
+                    return get_class($array) === $parameter->getClass()->name;
+                });
+                $parsed_vars[] = array_shift($filtered_var);
+            } else {
+                $parsed_vars[] = $parameter;
+            }
+        }
+
+        return $parsed_vars;
     }
 
     /**

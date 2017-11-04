@@ -128,3 +128,11 @@ if ( ! function_exists('collect')) {
         return new \Poplar\Support\Collection($array);
     }
 }
+if (!function_exists('database')) {
+    /**
+     * @return \Poplar\Database\QueryBuilder
+     */
+    function database() {
+        return \Poplar\Application::database();
+    }
+}

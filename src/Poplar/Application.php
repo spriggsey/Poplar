@@ -3,6 +3,8 @@
 
 namespace Poplar;
 
+use Poplar\Database\Connection;
+use Poplar\Database\QueryBuilder;
 use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;
 use Whoops\Handler\PrettyPageHandler as WhoopsPretty;
@@ -10,10 +12,11 @@ use Whoops\Run as Whoops;
 
 class Application {
 
-    private static $base_path;
-    public         $directory;
-    private        $config;
-    private        $whoops;
+    protected static $registry = [];
+    private static   $base_path;
+    public           $directory;
+    private          $config;
+    private          $whoops;
 
     public function __construct($directory) {
         self::$base_path = $directory;
@@ -23,6 +26,9 @@ class Application {
         $this->config = new Config();
         // load whoops
         $this->loadWhoops();
+        // register the database class but we do not connect until required
+        $this->registerDatabase();
+
     }
 
     /**
@@ -40,7 +46,7 @@ class Application {
         } else {
             // give a generic page
             $whoops->pushHandler(function () {
-                require view('error');
+                require view('errors.404');
                 die();
             });
         }
@@ -54,6 +60,32 @@ class Application {
      */
     public static function basePath() {
         return self::$base_path;
+    }
+
+    /**
+     * grabs the database class and returns the live connection
+     *
+     * @return QueryBuilder
+     */
+    public static function database() {
+        return self::get('database')->connect();
+    }
+
+    public static function get($key) {
+        if ( ! array_key_exists($key, static::$registry)) {
+            throw new \Exception("$key does not exist.");
+        }
+
+        return static::$registry[$key];
+    }
+
+    public static function user() {
+        return self::get('user');
+    }
+
+    public static function bind($key, $value) {
+        static::$registry[$key] = $value;
+
     }
 
     public function captureRequest() {
@@ -73,8 +105,12 @@ class Application {
             if (Config::get('app.debug_mode')) {
                 dd($e);
             }
-            include view('404');
+            include view('errors.404');
         }
 
+    }
+
+    private function registerDatabase() {
+        Application::bind('database', new Database\Connection());
     }
 }
