@@ -4,6 +4,7 @@
 namespace Poplar\Database;
 
 use PDO;
+use Poplar\Application;
 
 class Connection {
 
@@ -29,10 +30,25 @@ class Connection {
     }
 
     private function buildQB() {
-        $pdo =
-            new PDO("{$this->config['driver']}:dbname={$this->config['database']};host={$this->config['host']};port={$this->config['port']}",
-                $this->config['username'], $this->config['password'], $this->config['opts']);
-
+        $connection = "{$this->config['driver']}Connection";
+        /** @var PDO $pdo */
+        $pdo = $this->$connection();
         return new QueryBuilder($pdo);
+    }
+
+    /**
+     * @return PDO
+     */
+    private function mysqlConnection() {
+        return new PDO("mysql:dbname={$this->config['database']};host={$this->config['host']};port={$this->config['port']}",
+            $this->config['username'], $this->config['password'], $this->config['opts']);
+    }
+
+    /**
+     * @return PDO
+     */
+    private function sqliteConnection() {
+        $path = Application::basePath().$this->config['database'];
+        return new PDO("sqlite:{$path}");
     }
 }

@@ -8,7 +8,7 @@ class Scheduler {
     public static $disable=FALSE;
     protected static $table_name='task_scheduler';
     public $processed_count=0;
-    /** @var \Poplar\Database\QueryBuilder $QB */
+    /** @var \Poplar\Database\oldQueryBuilder $QB */
     private $QB;
 
     function __construct() {

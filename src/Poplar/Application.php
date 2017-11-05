@@ -4,6 +4,7 @@
 namespace Poplar;
 
 use Poplar\Database\Connection;
+use Poplar\Database\oldQueryBuilder;
 use Poplar\Database\QueryBuilder;
 use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;

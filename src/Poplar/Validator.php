@@ -4,7 +4,7 @@
 namespace Poplar;
 
 
-use Poplar\Database\QueryBuilder;
+use Poplar\Database\oldQueryBuilder;
 
 class Validator {
     public $request_validation_array;
@@ -134,7 +134,7 @@ class Validator {
      * @throws \Exception
      */
     private function unique($value, $database_table, $column_name, $ignore_id=FALSE) {
-        /** @var QueryBuilder $qb */
+        /** @var oldQueryBuilder $qb */
         $qb          =App::get('database');
         $where_clause=[[$column_name, '=', $this->data_array->$value]];
         // set the ignore id, this will allow you to ignore an ID in the table
@@ -188,7 +188,7 @@ class Validator {
      * @throws \Exception
      */
     private function exists($value, $database_table, $column_name) {
-        /** @var QueryBuilder $qb */
+        /** @var oldQueryBuilder $qb */
         $qb          =App::get('database');
         $where_clause=[[$column_name, '=', $this->data_array->$value]];
         // check if exists in the database

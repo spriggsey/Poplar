@@ -3,15 +3,26 @@
 
 namespace Poplar\Database;
 
-use Poplar\Model;
+
 use PDO;
-use PDOException;
+use Poplar\Support\Collection;
 
 class QueryBuilder {
+    private $db;
+    private $table;
+    private $query = [
+        "action"  => NULL,
+        "columns" => NULL,
+        "where"   => NULL,
+        "table"   => NULL,
+        "order"   => NULL,
+    ];
     /** @var \PDOStatement $stmt */
     private $stmt;
-    private $db;
-    private $data;
+    private $value_binds = [];
+    private $model;
+    private $update_array;
+    private $insert_array;
 
     /**
      * QueryBuilder constructor.
@@ -24,55 +35,75 @@ class QueryBuilder {
     }
 
     /**
-     * @param             $table
-     * @param array|bool  $params
-     * @param array|bool  $where_clause
-     * @param object|null $toClass
+     * @param $name
      *
-     * @return array
+     * @return QueryBuilder
      */
-    public function browse($table, $params = FALSE, $where_clause = FALSE, $toClass = NULL) {
-        $sql = sprintf("SELECT %s FROM `%s` %s", $this->prepareColumns($params), $table,
-            ($where_clause) ? $this->prepareWhereClause($where_clause) : ';');
-        try {
-            $this->stmt = $this->db->prepare($sql);
-            $this->bindValues($params, $where_clause);
-            $this->stmt->execute();
-        } catch (PDOException $e) {
-            throw new PDOException($e->getMessage());
-        }
-        if ($toClass) {
-            $this->stmt->setFetchMode(PDO::FETCH_CLASS, $toClass);
-        } else {
-            $this->stmt->setFetchMode(PDO::FETCH_CLASS, "stdClass");
-        }
+    public function setTable($name) {
+        $this->table = $name;
 
-        return $this->stmt->fetchAll();
+        return $this;
     }
 
-    private function prepareColumns($values) {
-        if ($values) {
-            return "`" . implode(",`", $values) . "`";
+    /**
+     * @param array $params
+     *
+     * @return QueryBuilder
+     */
+    public function where(...$params) {
+        // set the where string
+        $this->query['where'] = $this->processWhereClause($params);
+        // bind the values
+        $this->preBindValues($params);
+
+        return $this;
+    }
+
+    /**
+     * @param $params
+     *
+     * @return string
+     */
+    private function processWhereClause($params) {
+        if (count($params) === 1) {
+            return $this->processWhereClauseArray($params[0]);
         } else {
-            return '*';
+            return $this->processWhereClauseSingle($params);
         }
     }
 
     /**
-     * @param array $where_clause
+     * Set what needs to be bound before statement is prepared
+     *
+     * @param array ...$params
+     */
+    private function preBindValues($params) {
+        if (count($params) === 1) {
+            foreach ($params[0] as $key => $val) {
+                $this->value_binds[$key] = $val;
+            }
+        } else {
+            $this->value_binds[reset($params)] = end($params);
+        }
+    }
+
+    /**
+     * @param $array
      *
      * @return string
      */
-    private function prepareWhereClause($where_clause) {
+    private function processWhereClauseArray($array) {
         $whereString = [];
-        foreach ($where_clause as $key => $val) {
-            if (is_array($val)) {
-                $whereString[] = "`{$val[0]}`{$val[1]}:{$val[0]}";
-            } else {
-                if (is_null($val)) {
-                    $whereString[] = "`{$key}` IS NULL";
+        if (count($array) === 1) {
+            foreach ($array as $key => $val) {
+                if (is_array($val)) {
+                    $whereString[] = "{$val[0]}{$val[1]}:{$val[0]}";
                 } else {
-                    $whereString[] = "`{$key}`=:{$key}";
+                    if (is_null($val)) {
+                        $whereString[] = "{$key} IS NULL";
+                    } else {
+                        $whereString[] = "{$key}=:{$key}";
+                    }
                 }
             }
         }
@@ -81,88 +112,346 @@ class QueryBuilder {
     }
 
     /**
-     * @param mixed $params
-     * @param       $where_clause
+     * @param $params
      *
-     * @internal param \PDOStatement $stmt
+     * @return string
      */
-    private function bindValues($params = FALSE, $where_clause = FALSE) {
-        if ($params && is_array($params)) {
-            foreach ($params as $key => $val) {
-                $this->stmt->bindValue($key, $val);
+    private function processWhereClauseSingle($params) {
+        if (count($params) === 3) {
+            return "WHERE " . "`{$params[0]}` {$params[1]} :{$params[0]}";
+        } else {
+            if (is_null(end($params))) {
+                return "{$params[0]} IS NULL";
             }
-        }
-        if ($where_clause && is_array($where_clause)) {
-            foreach ($where_clause as $key => $val) {
-                if (is_array($val)) {
-                    $this->stmt->bindValue($val[0], $val[2]);
-                } else {
-                    $this->stmt->bindValue($key, $val);
-                }
-            }
+
+            return "WHERE " . "{$params[0]}=:{$params[0]}";
         }
     }
 
     /**
-     * @param string     $table
-     * @param bool|array $params
-     * @param bool|array $where_clause
-     * @param bool|Model $classBinder
+     * @param array ...$columns
      *
-     * @return array|bool
+     * @return QueryBuilder
      */
-    public function read($table, $params = FALSE, $where_clause = FALSE, $classBinder = FALSE) {
-        $sql        = sprintf("SELECT %s FROM `%s` %s", $this->prepareColumns($params), $table,
-            ($where_clause) ? $this->prepareWhereClause($where_clause) : ';');
-        $this->stmt = $this->db->prepare($sql);
-        $this->bindValues(FALSE, $where_clause);
+    public function select(...$columns) {
+        $this->query['columns'] = $columns;
 
-        if ($classBinder) {
-            $this->bindAttributes($classBinder);
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function first() {
+        return $this->get()->first();
+    }
+
+    /**
+     * @param array $columns
+     *
+     * @return \Poplar\Support\Collection
+     */
+    public function get($columns = ['*']) {
+        $original_columns = $this->query['columns'];
+        if (is_null($original_columns)) {
+            $this->query['columns'] = $columns;
         }
+
+        return $this->processSelect();
+
+    }
+
+    /**
+     * @return \Poplar\Support\Collection
+     */
+    private function processSelect() {
+        $this->stmt = $this->db->prepare($this->buildQueryString());
+        $this->stmt->setFetchMode(PDO::FETCH_CLASS, \stdClass::class);
+        if ( ! empty($this->model)) {
+            $this->stmt->setFetchMode(PDO::FETCH_CLASS, $this->model);
+        }
+
+        $this->bindValues();
         $this->stmt->execute();
 
-        if ($this->stmt->rowCount() === 0) {
-            return FALSE;
+        $result = $this->stmt->fetchAll();
+
+        return collect($result);
+    }
+
+    /**
+     * @param string $type
+     *
+     * @return string
+     *
+     * @uses QueryBuilder::queryStringSELECT()
+     * @uses QueryBuilder::queryStringINSERT()
+     * @uses QueryBuilder::queryStringDELETE()
+     * @uses QueryBuilder::queryStringUPDATE()
+     */
+    private function buildQueryString($type = 'SELECT') {
+        $type_func = "queryString{$type}";
+
+        return $this->$type_func();
+    }
+
+    private function bindValues($params = []) {
+        if ( ! empty($params)) {
+            $this->value_binds = array_merge($params, $this->value_binds);
         }
-        // todo - this is returning bool and is pretty useless
-        if ($classBinder) {
-            return $this->data = $this->stmt->fetch(PDO::FETCH_BOUND);
-        } else {
-            return $this->data = $this->stmt->fetch(PDO::FETCH_ASSOC);
+        foreach ($this->value_binds as $key => $value) {
+            $this->stmt->bindValue(':' . $key, $value);
         }
     }
 
     /**
-     * @param Model|object $class
+     * @param $value
+     *
+     * @return mixed
      */
-    public function bindAttributes(Model $class) {
-        $vars = get_object_vars($class);
-        foreach (array_keys($vars) as $array_key) {
-            $this->stmt->bindColumn($array_key, $class->$array_key);
-        }
+    public function value($value) {
+        return $this->get()->pluck($value)->first();
     }
 
-    public function edit($table, $params, $where_clause) {
-        $sql = sprintf('UPDATE `%s` SET %s %s;', $table, $this->prepareValues($params, TRUE),
-            $this->prepareWhereClause($where_clause));
+    /**
+     * @param array ...$value
+     *
+     * @return Collection
+     */
+    public function pluck(...$value) {
+        return $this->get()->pluck(...$value);
+    }
+
+    /**
+     * @param int      $count
+     * @param callable $closure
+     *
+     * @return bool
+     */
+    public function chunk(int $count, callable $closure) {
+        foreach ($this->get()->chunk($count) as $chunk_array) {
+            if ($closure($chunk_array) === FALSE) {
+                return FALSE;
+            }
+        }
+
+        return TRUE;
+    }
+
+    /**
+     * @return int
+     */
+    public function count() {
+        return $this->get()->count();
+    }
+
+    public function sum($value) {
+        return $this->get()->sum($value);
+    }
+
+    public function min($value) {
+        return $this->get()->min($value);
+    }
+
+    /**
+     * @param $value
+     *
+     * @return mixed
+     */
+    public function max($value) {
+        return $this->get()->max($value);
+    }
+
+    /**
+     * @param $fully_qualified_class_name
+     *
+     * @return QueryBuilder
+     */
+    public function bindModel($fully_qualified_class_name) {
+        $this->model = $fully_qualified_class_name;
+
+        return $this;
+    }
+
+    public function addSelect(...$columns) {
+        $this->query['columns'] = array_merge($this->query['columns'], $columns);
+
+        return $this;
+    }
+
+    public function avg($value) {
+        return $this->get()->avg($value);
+    }
+
+    public function offset() { }
+
+    public function orWhere() { }
+
+    public function whereIn() { }
+
+    public function whereNotIn() { }
+
+    public function whereBetween() { }
+
+    public function whereNotBetween() { }
+
+    public function groupBy() { }
+
+    public function having() { }
+
+    public function inRandomOrder() { }
+
+    public function latest() { }
+
+    public function orderBy() { }
+
+    public function limit() { }
+
+    public function take() { }
+
+    public function skip() { }
+
+    /**
+     * @param array $insert_array
+     *
+     * @return int
+     * @throws QueryException
+     */
+    public function insertGetId(Array $insert_array) {
+        if ( ! $this->insert($insert_array)) {
+            throw new QueryException();
+        }
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * @param array $insert_array
+     *
+     * @return bool
+     * @throws QueryException
+     */
+    public function insert(Array $insert_array) {
         try {
-            $this->stmt = $this->db->prepare($sql);
-            $this->bindValues($params, $where_clause);
+            $this->insert_array = $insert_array;
+            $this->stmt         = $this->db->prepare($this->buildQueryString('INSERT'));
+            $this->bindValues($insert_array);
 
             return $this->stmt->execute();
         } catch (\PDOException $e) {
-            throw new \PDOException($this->stmt->queryString);
+            throw new QueryException($e);
         }
+    }
+
+    public function delete() {
+        try {
+            $this->stmt = $this->db->prepare($this->buildQueryString('DELETE'));
+            $this->bindValues();
+            if ( ! $this->stmt->execute()) {
+                throw new QueryException('Deletion query failure');
+            }
+
+            return $this->stmt->rowCount();
+        } catch (\PDOException $e) {
+            throw new QueryException($e);
+        }
+
+    }
+
+    public function update(array $update_array) {
+        try {
+            // process the update array
+            $this->update_array = $update_array;
+            $this->stmt         = $this->db->prepare($this->buildQueryString('UPDATE'));
+            $this->bindValues($update_array);
+
+            return $this->stmt->execute();
+        } catch (\PDOException $e) {
+            throw new QueryException($e);
+        }
+
+    }
+
+    public function truncate() {
+        try {
+            $this->stmt = $this->db->prepare("TRUNCATE {$this->table}");
+
+            return $this->stmt->execute();
+        } catch (\PDOException $e) {
+            throw new QueryException($e);
+        }
+    }
+
+    public function increment($column, $amount) {
+        try {
+            $this->stmt =
+                $this->db->prepare("UPDATE {$this->table} SET {$column} = {$column} + {$amount} {$this->query['where']}");
+            $this->bindValues();
+            return $this->stmt->execute();
+        } catch (\PDOException $e) {
+            throw new \PDOException($e);
+        }
+    }
+
+    public function decrement($column, $amount) {
+        try {
+            $this->stmt =
+                $this->db->prepare("UPDATE {$this->table} SET {$column} = {$column} - {$amount} {$this->query['where']}");
+            $this->bindValues();
+            return $this->stmt->execute();
+        } catch (\PDOException $e) {
+            throw new \PDOException($e);
+        }
+    }
+
+    /**
+     * Check if the query string is valid sql
+     *
+     * @param $statement
+     */
+    private function validateQueryString($statement) {
+
+    }
+
+    /**
+     * @return string
+     */
+    private function queryStringSELECT() {
+        $string = sprintf('SELECT %s FROM %s %s;', $this->prepareColumns($this->query['columns']), $this->table,
+            $this->query['where']);
+
+        return $string;
+    }
+
+    /**
+     * @param $values
+     *
+     * @return string
+     */
+    private function prepareColumns($values) {
+        if ($values) {
+            return implode(",", $values);
+        } else {
+            return '*';
+        }
+    }
+
+    private function queryStringINSERT() {
+        $string = sprintf('INSERT INTO `%s` (`%s`) VALUES (%s);', $this->table,
+            implode('`,`', array_keys($this->insert_array)), $this->prepareValues(array_keys($this->insert_array)));
+
+        return $string;
     }
 
     /**
      * @param array $values
      *
+     * @param bool  $assoc
+     *
      * @return string
      */
-    private function prepareValues($values, $advanced = FALSE) {
-        if ($advanced) {
+    private function prepareValues($values, $assoc = FALSE) {
+        if ($assoc) {
             $paramString = [];
             foreach ($values as $key => $val) {
                 $paramString[] = "`{$key}`=:{$key}";
@@ -175,102 +464,17 @@ class QueryBuilder {
         }
     }
 
-    /**
-     * @param string $table
-     * @param        $params
-     *
-     * @internal param array $parameters
-     * @return bool
-     */
-    public function add($table, $params) {
-        $sql = sprintf('INSERT INTO `%s` (`%s`) VALUES (%s);', $table, implode('`,`', array_keys($params)),
-            $this->prepareValues(array_keys($params)));
-        try {
-            $this->stmt = $this->db->prepare($sql);
-            $this->bindValues($params);
+    private function queryStringUPDATE() {
+        $string = sprintf('UPDATE `%s` SET %s %s;', $this->table, $this->prepareValues($this->update_array, TRUE),
+            $this->query['where']);
 
-            return $this->stmt->execute();
-        } catch (\PDOException $e) {
-            throw new \PDOException($e->getMessage());
-        }
+        return $string;
     }
 
-    public function delete($table, $where_clause) {
-        $sql = sprintf("DELETE FROM %s %s", $table, $this->prepareWhereClause($where_clause));
-        try {
-            $this->stmt = $this->db->prepare($sql);
-            $this->bindValues(FALSE, $where_clause);
+    private function queryStringDELETE() {
+        $string = sprintf("DELETE FROM %s %s", $this->table, $this->query['where']);
 
-            return $this->stmt->execute();
-        } catch (\PDOException $e) {
-            throw new \PDOException($e->getMessage());
-        }
-    }
-
-    /**
-     * @return string
-     */
-    public function lastInsertId() {
-        return $this->db->lastInsertId();
-    }
-
-    public function rowCount() {
-        return $this->stmt->rowCount();
-    }
-
-    public function raw($sql, $toClass = FALSE) {
-        try {
-            $this->stmt = $this->db->prepare($sql);
-            if ($this->stmt->execute()) {
-                if ($toClass) {
-                    $this->stmt->setFetchMode(PDO::FETCH_CLASS, $toClass);
-                } else {
-                    $this->stmt->setFetchMode(PDO::FETCH_CLASS, "stdClass");
-                }
-
-                return $this->stmt->fetchAll();
-            }
-        } catch (PDOException $e) {
-            throw new PDOException($e->getMessage());
-        }
-
-        return FALSE;
-    }
-
-    public function get($column) {
-        return $this->data[$column];
-    }
-
-    /**
-     * @param string $table_name
-     *
-     * @return array|string
-     */
-    public function getColumnNames($table_name) {
-        $sql = 'SHOW COLUMNS FROM ' . $table_name;
-
-        $this->stmt   = $this->db->prepare($sql);
-        $column_names = [];
-        try {
-            if ($this->stmt->execute()) {
-                $raw_column_data = $this->stmt->fetchAll();
-
-                foreach ($raw_column_data as $outer_key => $array) {
-                    foreach ($array as $inner_key => $value) {
-
-                        if ($inner_key === 'Field') {
-                            if ( ! (int)$inner_key) {
-                                $column_names[] = $value;
-                            }
-                        }
-                    }
-                }
-            }
-
-            return $column_names;
-        } catch (PDOException $e) {
-            throw new PDOException($e->getMessage());
-        }
+        return $string;
     }
 
 }
