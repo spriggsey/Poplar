@@ -152,6 +152,7 @@ class QueryBuilder {
      * @return \Poplar\Support\Collection
      */
     public function get($columns = ['*']) {
+        if (!is_array($columns)) {$columns = [$columns];}
         $original_columns = $this->query['columns'];
         if (is_null($original_columns)) {
             $this->query['columns'] = $columns;

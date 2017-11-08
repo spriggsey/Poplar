@@ -37,7 +37,7 @@ if ( ! function_exists('env')) {
     }
 }
 if ( ! function_exists('config')) {
-    function config($key, $default) {
+    function config($key, $default = NULL) {
         return \Poplar\Config::get($key, $default);
     }
 }
@@ -87,12 +87,6 @@ if ( ! function_exists('en')) {
         }
     }
 }
-if ( ! function_exists('camel_case')) {
-    function camel_case($string) {
-        // TODO: complete this
-        return $string;
-    }
-}
 
 if ( ! function_exists('class_basename')) {
     function class_basename($path) {
@@ -128,7 +122,7 @@ if ( ! function_exists('collect')) {
         return new \Poplar\Support\Collection($array);
     }
 }
-if (!function_exists('database')) {
+if ( ! function_exists('database')) {
     /**
      * @return \Poplar\Database\QueryBuilder
      */

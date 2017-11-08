@@ -50,7 +50,8 @@ class Input {
         $object = self::$oldData;
         $object = array_merge($object, self::$data);
 
-        return (object)$object;
+        return
+        collect($object);
     }
 
     /**
@@ -95,9 +96,8 @@ class Input {
             }
         }
 
-        // on the live system we may need to trim off the first request if it is set
         foreach ($_REQUEST as $key => $val) {
-            self::setData(str_replace(Request::uri(), '', $key), $val);
+            self::setData($key, $val);
         }
         foreach ($_FILES as $name => $file) {
             self::setFile($name, $file);
@@ -113,9 +113,6 @@ class Input {
     }
 
     public static function setData($name, $val) {
-        if (empty($name)) {
-            return TRUE;
-        }
         self::$data[$name] = $val;
     }
 
@@ -150,11 +147,32 @@ class Input {
         }
     }
 
-    public static function previousPage() {
-        return (isset($_SESSION['previous_page'])) ? $_SESSION['previous_page'] : NULL;
+    public static function storePreviousPage() {
+        // first get the previous page from last time.
+        Request::$previous_page = (isset($_SESSION['previous_page'])) ? $_SESSION['previous_page'] : NULL;
+        // then put a new previous page in from this session
+        $_SESSION['previous_page'] = Request::uri();
+        return Request::$previous_page;
     }
 
-    public static function storePreviousPage() {
-        $_SESSION['previous_page'] = Request::uri();
+    public static function flashErrorLog($validation_error_log) {
+        if (empty($validation_error_log)) {
+            return FALSE;
+        }
+        $_SESSION['validation_error_log'] = $validation_error_log;
+
+        return TRUE;
+    }
+
+    public static function retrieveErrorLog() {
+        if (empty($_SESSION['validation_error_log'])) {
+            return FALSE;
+        }
+
+        Application::bind('validation_errors', $_SESSION['validation_error_log']);
+        unset($_SESSION['validation_error_log']);
+
+        return TRUE;
     }
 }
+

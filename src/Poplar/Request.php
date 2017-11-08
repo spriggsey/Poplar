@@ -12,16 +12,13 @@ class Request {
     public static  $route;
     private static $uri;
 
-    public function __construct() {
-        throw new \Exception('Request should not be instanced');
-    }
 
     /**
      * Store all necessary info from the request
      */
     public static function init() {
         self::$uri           = self::getURI();
-        self::$previous_page = self::getPreviousPage();
+        self::$previous_page = Input::storePreviousPage();
         self::$client_ip = $_SERVER['REMOTE_ADDR'];
         self::$server_ip = $_SERVER['HTTP_HOST'];
     }
@@ -46,12 +43,38 @@ class Request {
         return trim($_SERVER['PATH_INFO'], '/');
     }
 
-    private static function getPreviousPage() {
-        return self::$previous_page = Input::previousPage();
-    }
-
     public static function uri() {
         return self::$uri;
+    }
+
+
+    /**
+     * Extends upon the validation engine to give back errors depending on if ajax or browser requests
+     * If you require basic validation engine functionality, do not use this. Use `Validator::make` instead.
+     *
+     * @param $validation_array
+     *
+     * @return bool
+     */
+    public function validate($validation_array) {
+        $validator = new Validator(Input::all());
+        if ( ! $validator->validate($validation_array)) {
+            // we need to throw errors here depending on what type of connection it is (axios or browser)
+            if (Request::isAjax()) {
+                // we will send them a specific error code along with dumping the log
+                http_response_code(422);
+                dd($validator->validation_error_log);
+            }
+            // flash the input vals just incase they are used later
+            Input::flashExcept('password', 'confirm_password');
+            Input::flashErrorLog($validator->validation_error_log);
+            // we most likely want to go back the the previous page where the values were sent from
+            // this only works with browser based form posting, ajax should never do this
+            header("Location: /" . Request::$previous_page);
+            die();
+        }
+
+        return TRUE;
     }
 
     public static function method() {

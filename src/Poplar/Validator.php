@@ -5,6 +5,7 @@ namespace Poplar;
 
 
 use Poplar\Database\oldQueryBuilder;
+use Poplar\Support\Str;
 
 class Validator {
     public $request_validation_array;
@@ -111,12 +112,12 @@ class Validator {
                     continue;
                 }
                 // we now call that function and allow it to determine if an error is found
-                call_user_func_array([$this, snakeToCamelCase($function)], $function_args);
+                call_user_func_array([$this, Str::camel($function)], $function_args);
             }
         }
         // TODO
         // we bind validation_errors here as we want the array regardless of if it has anything
-        App::bind('validation_errors', $this->validation_error_log);
+        Application::bind('validation_errors', $this->validation_error_log);
         if ( ! empty($this->validation_error_log)) {
             return FALSE;
         }
@@ -171,7 +172,7 @@ class Validator {
      * @return bool
      */
     private function pushError($value_name, $error_message) {
-        if ( ! is_array($this->validation_error_log[ $value_name ])) {
+        if ( ! isset($this->validation_error_log[ $value_name ])) {
             $this->validation_error_log[ $value_name ]=[];
         }
         array_push($this->validation_error_log[ $value_name ], $error_message);

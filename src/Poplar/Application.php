@@ -24,7 +24,7 @@ class Application {
         // init up the request static class
         Request::init();
         // load the config into the environment
-        $this->config = new Config();
+        $this->registerConfig();
         // load whoops
         $this->loadWhoops();
         // register the database class but we do not connect until required
@@ -80,6 +80,10 @@ class Application {
         return static::$registry[$key];
     }
 
+    public static function getApplicationStorage() {
+        return self::get('config');
+    }
+
     public static function user() {
         return self::get('user');
     }
@@ -113,5 +117,10 @@ class Application {
 
     private function registerDatabase() {
         Application::bind('database', new Database\Connection());
+    }
+
+    private function registerConfig() {
+        $this->config = new Config();
+        Application::bind('config',$this->config);
     }
 }
