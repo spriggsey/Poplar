@@ -19,10 +19,11 @@
     ],
     "require": {
         "php": ">=7.0",
-        "filp/whoops": "^2.1",
-        "symfony/var-dumper": "^3.3",
-        "vlucas/phpdotenv": "^2.4",
-        "tightenco/collect": "dev-master"
+        "filp/whoops": "2.1.*",
+        "symfony/var-dumper": "v3.3.9",
+        "vlucas/phpdotenv": "v2.4.0",
+        "tightenco/collect": "v5.5.9",
+        "doctrine/inflector": "v1.2.0"
     },
     "autoload": {
         "files": [

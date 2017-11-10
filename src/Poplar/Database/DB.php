@@ -24,22 +24,14 @@ class DB {
         }
     }
 
-    public static function select($statement) {
-
-    }
-
-    public static function update($statement) {
-
-    }
-
-    public static function delete($statement) {
-
-    }
-
-    public static function insert($statement) { }
-
+    /**
+     * @param $statement
+     *
+     * @return \PDOStatement
+     */
     public static function raw($statement) {
-
+        return
+        self::getDB()->raw($statement);
     }
 
 }

@@ -73,13 +73,27 @@ class QueryBuilder {
     }
 
     /**
+     * @param $statement
+     *
+     * @return \PDOStatement
+     */
+    public function raw($statement) {
+        $output =
+        $this->db->query($statement);
+        if (!$output) {
+            return $output;
+        }
+        return $output;
+    }
+
+    /**
      * Set what needs to be bound before statement is prepared
      *
      * @param array ...$params
      */
     private function preBindValues($params) {
         if (count($params) === 1) {
-            foreach ($params[0] as $key => $val) {
+            foreach ((array) $params[0] as $key => $val) {
                 $this->value_binds[$key] = $val;
             }
         } else {
@@ -94,8 +108,8 @@ class QueryBuilder {
      */
     private function processWhereClauseArray($array) {
         $whereString = [];
-        if (count($array) === 1) {
-            foreach ($array as $key => $val) {
+        if (count($array) === 1 ) {
+            foreach ((array) $array as $key => $val) {
                 if (is_array($val)) {
                     $whereString[] = "{$val[0]}{$val[1]}:{$val[0]}";
                 } else {

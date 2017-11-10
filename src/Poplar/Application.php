@@ -108,7 +108,8 @@ class Application {
         } catch (\Exception $e) {
             http_response_code(404);
             if (Config::get('app.debug_mode')) {
-                dd($e);
+                // throw it if we are in debug mode
+                throw $e;
             }
             include view('errors.404');
         }

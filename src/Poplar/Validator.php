@@ -4,7 +4,7 @@
 namespace Poplar;
 
 
-use Poplar\Database\oldQueryBuilder;
+use Poplar\Database\DB;
 use Poplar\Support\Str;
 
 class Validator {
@@ -135,8 +135,6 @@ class Validator {
      * @throws \Exception
      */
     private function unique($value, $database_table, $column_name, $ignore_id=FALSE) {
-        /** @var oldQueryBuilder $qb */
-        $qb          =App::get('database');
         $where_clause=[[$column_name, '=', $this->data_array->$value]];
         // set the ignore id, this will allow you to ignore an ID in the table
         if ($ignore_id!==FALSE) {
@@ -144,11 +142,11 @@ class Validator {
         }
         // check if exists in the database
         try {
-            $qb->read($database_table, FALSE, $where_clause);
+            $output = DB::table($database_table)->where($where_clause)->get();
         } catch (\Exception $e) {
             throw new \Exception("Invalid Unique Query for {$value}");
         }
-        if ($qb->rowCount()>0) {
+        if ($output->count()>0) {
             if ($value==='email') {
                 // give a special value for this
                 $this->pushError($value, "$value provided is already registered on our system, please log in instead.");
@@ -189,16 +187,14 @@ class Validator {
      * @throws \Exception
      */
     private function exists($value, $database_table, $column_name) {
-        /** @var oldQueryBuilder $qb */
-        $qb          =App::get('database');
         $where_clause=[[$column_name, '=', $this->data_array->$value]];
         // check if exists in the database
         try {
-            $qb->read($database_table, FALSE, $where_clause);
+            $output = DB::table($database_table)->where($where_clause)->get();
         } catch (\Exception $e) {
             throw new \Exception("Invalid Exists Query for {$value}");
         }
-        if ($qb->rowCount()===0) {
+        if ($output->count()===0) {
             // it is not unique
             $this->pushError($value, "$value does not exist");
 
@@ -359,8 +355,8 @@ class Validator {
     }
 
     private function between($value, $min, $max) {
-        $strlength=strlen($this->data_array->$value);
-        if ($strlength<$min||$strlength>$max) {
+        $str_length=strlen($this->data_array->$value);
+        if ($str_length<$min||$str_length>$max) {
             $this->pushError($value, "$value is not between the character lengths (min: $min, max: $max)");
 
             return FALSE;

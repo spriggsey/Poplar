@@ -45,10 +45,10 @@ class Config {
     }
 
     private function storeEnvironmentVariables($environment_path) {
-        $dotenv = new Dotenv($environment_path);
-        $environment_variables = $dotenv->load();
+        $dot_env = new Dotenv($environment_path);
+        $environment_variables = $dot_env->load();
         try {
-            $dotenv->required(self::$env_required_vars);
+            $dot_env->required(self::$env_required_vars);
         } catch (ValidationException $e) {
             throw new ConfigException();
         }
