@@ -4,6 +4,8 @@
 namespace Poplar;
 
 
+use Poplar\Support\Collection;
+
 class Input {
     static private $data     = [];
     static private $fileData = [];
@@ -16,7 +18,7 @@ class Input {
      *
      * @return string
      */
-    public static function get($name, $default = '') {
+    public static function get($name, $default = ''): string {
         if (array_key_exists($name, self::$data)) {
             return self::$data[$name];
         }
@@ -44,9 +46,9 @@ class Input {
      * Return old data first then merge in the new to ensure the old data
      * does not overwrite the new stuff
      *
-     * @return object
+     * @return Collection
      */
-    public static function all() {
+    public static function all(): Support\Collection {
         $object = self::$oldData;
         $object = array_merge($object, self::$data);
 
@@ -57,35 +59,36 @@ class Input {
     /**
      * Return only a set of inputs instead of all
      *
-     * @param $name
+     * @param array $names
      *
-     * @return object
+     * @return Collection
+     * @internal param $name
+     *
      */
-    public static function only($name) {
-        $names  = func_get_args();
+    public static function only(...$names): Support\Collection {
         $object = [];
         foreach ($names as $name) {
             $object[$name] = self::$data[$name];
         }
 
-        return (object)$object;
+        return collect($object);
     }
 
     /**
      * Return everything but the data in the arguments.
      *
-     * @param $name
+     * @param array $names
      *
-     * @return object
+     * @return Collection
+     *
      */
-    public static function except($name) {
-        $names  = func_get_args();
+    public static function except(...$names): Support\Collection {
         $object = self::$data;
         foreach ($names as $name) {
             unset($object[$name]);
         }
 
-        return (object)$object;
+        return collect($object);
     }
 
     public static function processData() {
@@ -105,7 +108,7 @@ class Input {
 
         // retrieve any old data from the last view if any
         if ( ! empty($_SESSION['flashData'])) {
-            foreach ($_SESSION['flashData'] as $key => $val) {
+            foreach ((array) $_SESSION['flashData'] as $key => $val) {
                 self::$oldData[$key] = $val;
             }
             unset($_SESSION['flashData']);
@@ -126,8 +129,7 @@ class Input {
         }
     }
 
-    public static function flashOnly($name) {
-        $names = func_get_args();
+    public static function flashOnly(...$names) {
         foreach ($names as $name) {
             // check it lives in data
             if (isset(self::$data[$name])) {
@@ -139,8 +141,7 @@ class Input {
         }
     }
 
-    public static function flashExcept($name) {
-        $names      = func_get_args();
+    public static function flashExcept(...$names) {
         $diff_names = array_diff(array_keys(self::$data), $names);
         foreach ($diff_names as $name) {
             $_SESSION['flashData'][$name] = self::$data[$name];
@@ -149,13 +150,13 @@ class Input {
 
     public static function storePreviousPage() {
         // first get the previous page from last time.
-        Request::$previous_page = (isset($_SESSION['previous_page'])) ? $_SESSION['previous_page'] : NULL;
+        Request::$previous_page = $_SESSION['previous_page'] ?? NULL;
         // then put a new previous page in from this session
         $_SESSION['previous_page'] = Request::uri();
         return Request::$previous_page;
     }
 
-    public static function flashErrorLog($validation_error_log) {
+    public static function flashErrorLog($validation_error_log): bool {
         if (empty($validation_error_log)) {
             return FALSE;
         }
@@ -164,7 +165,7 @@ class Input {
         return TRUE;
     }
 
-    public static function retrieveErrorLog() {
+    public static function retrieveErrorLog(): bool {
         if (empty($_SESSION['validation_error_log'])) {
             return FALSE;
         }

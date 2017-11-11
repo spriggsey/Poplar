@@ -11,7 +11,7 @@ class View {
     private static $view_file;
 
     public static function process($route_data) {
-        if (is_array($route_data)) {
+        if (\is_array($route_data)) {
             self::processArrayData($route_data[1]);
             // we have pushed the data to static var so we can replace it
             $route_data = $route_data[0];
@@ -22,7 +22,7 @@ class View {
         return is_file(self::getViewFile());
     }
 
-    private static function processArrayData($data) {
+    private static function processArrayData(array $data) {
         foreach ($data as $key => $val) {
             self::loadVar($key, $val);
         }

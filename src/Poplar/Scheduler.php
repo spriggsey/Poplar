@@ -11,7 +11,7 @@ class Scheduler {
     /** @var \Poplar\Database\oldQueryBuilder $QB */
     private $QB;
 
-    function __construct() {
+    public function __construct() {
         $this->QB=database();
     }
 
@@ -21,7 +21,7 @@ class Scheduler {
      * @return bool
      * @throws SchedulerException
      */
-    public static function store(array $params) {
+    public static function store(array $params): bool {
         if (static::$disable) {
             return TRUE;
         }
@@ -31,7 +31,8 @@ class Scheduler {
         }
         // try to add the schedule to the DB, throw exception if cannot
         try {
-            (App::get('database'))->add(static::$table_name, $params);
+            // todo : edit this
+            database()->add(static::$table_name, $params);
         } catch (\PDOException $e) {
             throw new SchedulerException($e->getMessage());
         }
@@ -59,16 +60,17 @@ class Scheduler {
                 [
                     'delay',
                     '<',
-                    date("Y-m-d H:i:s"),
+                    date('Y-m-d H:i:s'),
                 ],
             ]);
             if ($limit) {
                 // if limit is provided, then slice it to that limit
-                $events=array_slice($events, 0, $limit);
+                $events= \array_slice($events, 0, $limit);
             } else {
                 // check if the scheduler default limit is set to a number in the config
+                // todo : update this
                 if (App::get('config')->scheduler_default_limit) {
-                    $events=array_slice($events, 0, App::get('config')->scheduler_default_limit);
+                    $events= \array_slice($events, 0, App::get('config')->scheduler_default_limit);
                 }
             }
             // loop through each event and call the function given with the arguments passed
@@ -76,7 +78,7 @@ class Scheduler {
                 $params=json_decode($event->params);
                 $class=new $event->class;
                 $function=$event->function;
-                if ( ! call_user_func_array([$class, $function], array_values((array) $params))) {
+                if ( ! \call_user_func_array([$class, $function], array_values((array) $params))) {
                     // set set the event status to failed
                     $this->QB->edit(self::$table_name, ['status'=>'failed'], ['id'=>$event->id]);
                 } else {

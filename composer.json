@@ -20,7 +20,7 @@
     "require": {
         "php": ">=7.0",
         "filp/whoops": "2.1.*",
-        "symfony/var-dumper": "v3.3.9",
+        "symfony/var-dumper": "v3.3.4",
         "vlucas/phpdotenv": "v2.4.0",
         "tightenco/collect": "v5.5.9",
         "doctrine/inflector": "v1.2.0"

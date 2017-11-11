@@ -10,6 +10,12 @@ if ( ! function_exists('is_assoc')) {
     }
 }
 if ( ! function_exists('env')) {
+    /**
+     * @param      $key
+     * @param null $default
+     *
+     * @return mixed
+     */
     function env($key, $default = NULL) {
         $value = \Poplar\Config::env($key, $default);
         if ($value === FALSE) {
@@ -27,7 +33,7 @@ if ( ! function_exists('env')) {
                 return '';
             case 'null':
             case '(null)':
-                return;
+                return NULL;
         }
         if (Str::startsWith($value, '"') && Str::endsWith($value, '"')) {
             return substr($value, 1, -1);
@@ -43,15 +49,15 @@ if ( ! function_exists('config')) {
 }
 if ( ! function_exists('_e')) {
     function _e($e, $default = '') {
-        if (isset($e) || $e || ! empty($e)) {
+        if (null !== $e || $e || ! empty($e)) {
             return $e;
-        } else {
-            if ($default !== '') {
-                return $default;
-            } else {
-                return NULL;
-            }
         }
+
+        if ($default !== '') {
+            return $default;
+        }
+
+        return NULL;
     }
 }
 if ( ! function_exists('base_path')) {
@@ -112,9 +118,9 @@ if ( ! function_exists('view')) {
         $url = trim($url, '/');
         if ($values) {
             return [\Poplar\Application::basePath() . "/resources/views/{$url}.view.php", $values];
-        } else {
-            return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
         }
+
+        return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
     }
 }
 if ( ! function_exists('collect')) {

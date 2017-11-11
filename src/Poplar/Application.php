@@ -3,8 +3,7 @@
 
 namespace Poplar;
 
-use Poplar\Database\Connection;
-use Poplar\Database\oldQueryBuilder;
+
 use Poplar\Database\QueryBuilder;
 use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;
@@ -34,8 +33,9 @@ class Application {
 
     /**
      * @return bool
+     * @throws \InvalidArgumentException
      */
-    private function loadWhoops() {
+    private function loadWhoops(): bool {
         $whoops = new Whoops();
         // we need to have different handlers depending on web or API
         if (env('APP_ENV') === 'dev') {
@@ -68,13 +68,13 @@ class Application {
      *
      * @return QueryBuilder
      */
-    public static function database() {
+    public static function database(): Database\QueryBuilder {
         return self::get('database')->connect();
     }
 
     public static function get($key) {
         if ( ! array_key_exists($key, static::$registry)) {
-            throw new \Exception("$key does not exist.");
+            throw new \RuntimeException("$key does not exist.");
         }
 
         return static::$registry[$key];
@@ -102,7 +102,7 @@ class Application {
             $router = Router::load('main.routes.php')->pathFind();
 
             if ( ! View::process($router)) {
-                throw new \Exception('View Processing failed');
+                throw new \RuntimeException('View Processing failed');
             }
             require View::getViewFile();
         } catch (\Exception $e) {
@@ -117,11 +117,11 @@ class Application {
     }
 
     private function registerDatabase() {
-        Application::bind('database', new Database\Connection());
+        self::bind('database', new Database\Connection());
     }
 
     private function registerConfig() {
         $this->config = new Config();
-        Application::bind('config',$this->config);
+        self::bind('config',$this->config);
     }
 }

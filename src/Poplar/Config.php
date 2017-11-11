@@ -27,7 +27,7 @@ class Config {
     public function storeConfig(string $file_path) {
         $file_contents = include $file_path;
         $filename      = basename($file_path, '.php');
-        foreach ($file_contents as $setting => $value) {
+        foreach ((array) $file_contents as $setting => $value) {
             self::set($filename, $setting, $value);
         }
     }
@@ -50,7 +50,7 @@ class Config {
         try {
             $dot_env->required(self::$env_required_vars);
         } catch (ValidationException $e) {
-            throw new ConfigException();
+            throw new ConfigException($e->getMessage());
         }
         // we need to explode them out and store them
         array_map(function ($environment_var) {
@@ -60,7 +60,7 @@ class Config {
     }
 
     private function loadConfigurationFiles() {
-        $this->config_files = glob($this->config_dir . "/*.php");
+        $this->config_files = glob($this->config_dir . '/*.php');
 
         foreach ($this->config_files as $config_file) {
             $this->storeConfig($config_file);

@@ -12,7 +12,7 @@ class Notification {
         if ( ! isset(static::$log[$type])) {
             static::$log[$type] = [];
         }
-        array_push(static::$log[$type], $message);
+        static::$log[$type][] = $message;
     }
 
     public static function get($type) {
@@ -29,14 +29,14 @@ class Notification {
             $html = "<div class='notify_block'>";
             foreach (static::$types as $type) {
                 if ( ! empty(static::$log[$type])) {
-                    foreach (static::$log[$type] as $msg) {
+                    foreach ((array) static::$log[$type] as $msg) {
                         $html .= "<div class='{$type}_block'><i class='icon-megaphone'></i>";
                         $html .= "<p class='{$type}_message'>{$msg}</p>";
                         $html .= "<i id class='icon-cancel {$type}_close'></i></div>";
                     }
                 }
             }
-            $html .= "</div>";
+            $html .= '</div>';
             echo $html;
         }
     }
@@ -54,7 +54,7 @@ class Notification {
         if ( ! isset($_SESSION['notification'][$type])) {
             $_SESSION['notification'][$type] = [];
         }
-        array_push($_SESSION['notification'][$type], $message);
+        $_SESSION['notification'][$type][] = $message;
     }
 
     // get the notifications out of the session storage and unset them.
@@ -62,11 +62,11 @@ class Notification {
         if ( ! empty($_SESSION['notification'])) {
             foreach (static::$types as $type) {
                 if ( ! empty($_SESSION['notification'][$type])) {
-                    foreach ($_SESSION['notification'][$type] as $key => $item) {
-                        if ( ! isset(static::$log[$type])) {
-                            static::$log[$type] = [];
-                        }
-                        array_push(static::$log[$type], $item);
+                    if ( ! isset(static::$log[$type])) {
+                        static::$log[$type] = [];
+                    }
+                    foreach ((array) $_SESSION['notification'][$type] as $key => $item) {
+                        static::$log[$type][] = $item;
                         unset($_SESSION['notification'][$type][$key]);
                     }
                 }

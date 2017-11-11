@@ -19,11 +19,17 @@ class Request {
     public static function init() {
         self::$uri           = self::getURI();
         self::$previous_page = Input::storePreviousPage();
-        self::$client_ip = $_SERVER['REMOTE_ADDR'];
-        self::$server_ip = $_SERVER['HTTP_HOST'];
+        self::$client_ip     = $_SERVER['REMOTE_ADDR'];
+        self::$server_ip     = $_SERVER['HTTP_HOST'];
     }
 
-    private static function getURI() {
+    /**
+     * @return string
+     */
+    private static function getURI(): string {
+        if (NULL !== self::$uri) {
+            return self::$uri;
+        }
         // we need to check if it is using ORIG_PATH or PATH
         if ( ! empty($_SERVER['ORIG_PATH_INFO'])) {
             $_SERVER['PATH_INFO'] = $_SERVER['ORIG_PATH_INFO'];
@@ -43,10 +49,22 @@ class Request {
         return trim($_SERVER['PATH_INFO'], '/');
     }
 
-    public static function uri() {
-        return self::$uri;
+    public static function method() {
+        // browsers do not support other methods by default so we need to check if
+        // those are coming in with hidden inputs with the name _method
+        // at this time they can only be POSTed and not GETed to keep the URI clean
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (isset($_POST['_method']) && \in_array(strtoupper($_POST['_method']), self::$allowed_methods, TRUE)) {
+                return strtoupper($_POST['_method']);
+            }
+        }
+
+        return $_SERVER['REQUEST_METHOD'];
     }
 
+    public static function queryString() {
+        return $_SERVER['QUERY_STRING'] ?? NULL;
+    }
 
     /**
      * Extends upon the validation engine to give back errors depending on if ajax or browser requests
@@ -56,11 +74,11 @@ class Request {
      *
      * @return bool
      */
-    public function validate($validation_array) {
+    public function validate($validation_array): bool {
         $validator = new Validator(Input::all());
         if ( ! $validator->validate($validation_array)) {
             // we need to throw errors here depending on what type of connection it is (axios or browser)
-            if (Request::isAjax()) {
+            if (self::isAJAX()) {
                 // we will send them a specific error code along with dumping the log
                 http_response_code(422);
                 dd($validator->validation_error_log);
@@ -70,35 +88,16 @@ class Request {
             Input::flashErrorLog($validator->validation_error_log);
             // we most likely want to go back the the previous page where the values were sent from
             // this only works with browser based form posting, ajax should never do this
-            header("Location: /" . Request::$previous_page);
+            header('Location: /' . self::$previous_page);
             die();
         }
 
         return TRUE;
     }
 
-    public static function method() {
-        // browsers do not support other methods by default so we need to check if
-        // those are coming in with hidden inputs with the name _method
-        // at this time they can only be POSTed and not GETed to keep the URI clean
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            if (isset($_POST['_method'])) {
-                if (in_array(strtoupper($_POST['_method']), self::$allowed_methods)) {
-                    return strtoupper($_POST['_method']);
-                }
-            }
-        }
-
-        return $_SERVER['REQUEST_METHOD'];
-    }
-
-    public static function queryString() {
-        return $_SERVER['QUERY_STRING']??null;
-    }
-
-    public static function isAJAX() {
+    public static function isAJAX(): bool {
         return ( ! empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest');
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
     }
 
 }

@@ -7,7 +7,15 @@ namespace Poplar\Database;
 use PDO;
 use Poplar\Support\Collection;
 
+/**
+ * Class QueryBuilder
+ *
+ * @package Poplar\Database
+ */
 class QueryBuilder {
+    /**
+     * @var PDO
+     */
     private $db;
     private $table;
     private $query = [
@@ -39,7 +47,7 @@ class QueryBuilder {
      *
      * @return QueryBuilder
      */
-    public function setTable($name) {
+    public function setTable($name): QueryBuilder {
         $this->table = $name;
 
         return $this;
@@ -50,7 +58,7 @@ class QueryBuilder {
      *
      * @return QueryBuilder
      */
-    public function where(...$params) {
+    public function where(...$params): QueryBuilder {
         // set the where string
         $this->query['where'] = $this->processWhereClause($params);
         // bind the values
@@ -65,25 +73,11 @@ class QueryBuilder {
      * @return string
      */
     private function processWhereClause($params) {
-        if (count($params) === 1) {
+        if (\count($params) === 1) {
             return $this->processWhereClauseArray($params[0]);
-        } else {
-            return $this->processWhereClauseSingle($params);
         }
-    }
 
-    /**
-     * @param $statement
-     *
-     * @return \PDOStatement
-     */
-    public function raw($statement) {
-        $output =
-        $this->db->query($statement);
-        if (!$output) {
-            return $output;
-        }
-        return $output;
+        return $this->processWhereClauseSingle($params);
     }
 
     /**
@@ -92,8 +86,8 @@ class QueryBuilder {
      * @param array ...$params
      */
     private function preBindValues($params) {
-        if (count($params) === 1) {
-            foreach ((array) $params[0] as $key => $val) {
+        if (\count($params) === 1) {
+            foreach ((array)$params[0] as $key => $val) {
                 $this->value_binds[$key] = $val;
             }
         } else {
@@ -106,14 +100,14 @@ class QueryBuilder {
      *
      * @return string
      */
-    private function processWhereClauseArray($array) {
+    private function processWhereClauseArray($array): string {
         $whereString = [];
-        if (count($array) === 1 ) {
-            foreach ((array) $array as $key => $val) {
-                if (is_array($val)) {
+        if (\count($array) === 1) {
+            foreach ((array)$array as $key => $val) {
+                if (\is_array($val)) {
                     $whereString[] = "{$val[0]}{$val[1]}:{$val[0]}";
                 } else {
-                    if (is_null($val)) {
+                    if (NULL === $val) {
                         $whereString[] = "{$key} IS NULL";
                     } else {
                         $whereString[] = "{$key}=:{$key}";
@@ -122,7 +116,7 @@ class QueryBuilder {
             }
         }
 
-        return "WHERE " . implode(" AND ", $whereString);
+        return 'WHERE ' . implode(' AND ', $whereString);
     }
 
     /**
@@ -130,16 +124,30 @@ class QueryBuilder {
      *
      * @return string
      */
-    private function processWhereClauseSingle($params) {
-        if (count($params) === 3) {
-            return "WHERE " . "`{$params[0]}` {$params[1]} :{$params[0]}";
-        } else {
-            if (is_null(end($params))) {
-                return "{$params[0]} IS NULL";
-            }
-
-            return "WHERE " . "{$params[0]}=:{$params[0]}";
+    private function processWhereClauseSingle($params): string {
+        if (\count($params) === 3) {
+            return 'WHERE ' . "`{$params[0]}` {$params[1]} :{$params[0]}";
         }
+
+        if (NULL === end($params)) {
+            return "{$params[0]} IS NULL";
+        }
+
+        return 'WHERE ' . "{$params[0]}=:{$params[0]}";
+    }
+
+    /**
+     * @param $statement
+     *
+     * @return \PDOStatement
+     */
+    public function raw($statement): \PDOStatement {
+        $output = $this->db->query($statement);
+        if ( ! $output) {
+            return $output;
+        }
+
+        return $output;
     }
 
     /**
@@ -147,7 +155,7 @@ class QueryBuilder {
      *
      * @return QueryBuilder
      */
-    public function select(...$columns) {
+    public function select(...$columns): QueryBuilder {
         $this->query['columns'] = $columns;
 
         return $this;
@@ -163,12 +171,11 @@ class QueryBuilder {
     /**
      * @param array $columns
      *
-     * @return \Poplar\Support\Collection
+     * @return Collection
      */
-    public function get($columns = ['*']) {
-        if (!is_array($columns)) {$columns = [$columns];}
+    public function get(array $columns = ['*']): Collection {
         $original_columns = $this->query['columns'];
-        if (is_null($original_columns)) {
+        if (NULL === $original_columns) {
             $this->query['columns'] = $columns;
         }
 
@@ -177,9 +184,9 @@ class QueryBuilder {
     }
 
     /**
-     * @return \Poplar\Support\Collection
+     * @return Collection
      */
-    private function processSelect() {
+    private function processSelect(): Collection {
         $this->stmt = $this->db->prepare($this->buildQueryString());
         $this->stmt->setFetchMode(PDO::FETCH_CLASS, \stdClass::class);
         if ( ! empty($this->model)) {
@@ -204,13 +211,16 @@ class QueryBuilder {
      * @uses QueryBuilder::queryStringDELETE()
      * @uses QueryBuilder::queryStringUPDATE()
      */
-    private function buildQueryString($type = 'SELECT') {
+    private function buildQueryString($type = 'SELECT'): string {
         $type_func = "queryString{$type}";
 
         return $this->$type_func();
     }
 
-    private function bindValues($params = []) {
+    /**
+     * @param array $params
+     */
+    private function bindValues(array $params = []) {
         if ( ! empty($params)) {
             $this->value_binds = array_merge($params, $this->value_binds);
         }
@@ -233,7 +243,7 @@ class QueryBuilder {
      *
      * @return Collection
      */
-    public function pluck(...$value) {
+    public function pluck(...$value): Collection {
         return $this->get()->pluck(...$value);
     }
 
@@ -243,8 +253,8 @@ class QueryBuilder {
      *
      * @return bool
      */
-    public function chunk(int $count, callable $closure) {
-        foreach ($this->get()->chunk($count) as $chunk_array) {
+    public function chunk(int $count, callable $closure): bool {
+        foreach ((array) $this->get()->chunk($count) as $chunk_array) {
             if ($closure($chunk_array) === FALSE) {
                 return FALSE;
             }
@@ -256,14 +266,24 @@ class QueryBuilder {
     /**
      * @return int
      */
-    public function count() {
+    public function count(): int {
         return $this->get()->count();
     }
 
+    /**
+     * @param $value
+     *
+     * @return mixed
+     */
     public function sum($value) {
         return $this->get()->sum($value);
     }
 
+    /**
+     * @param $value
+     *
+     * @return mixed
+     */
     public function min($value) {
         return $this->get()->min($value);
     }
@@ -282,33 +302,110 @@ class QueryBuilder {
      *
      * @return QueryBuilder
      */
-    public function bindModel($fully_qualified_class_name) {
+    public function bindModel($fully_qualified_class_name): QueryBuilder {
         $this->model = $fully_qualified_class_name;
 
         return $this;
     }
 
-    public function addSelect(...$columns) {
+    /**
+     * @param array ...$columns
+     *
+     * @return QueryBuilder
+     */
+    public function addSelect(...$columns): QueryBuilder {
         $this->query['columns'] = array_merge($this->query['columns'], $columns);
 
         return $this;
     }
 
+    /**
+     * @param $value
+     *
+     * @return mixed
+     */
     public function avg($value) {
         return $this->get()->avg($value);
     }
 
     public function offset() { }
 
-    public function orWhere() { }
+    /**
+     * @param $column
+     * @param $values
+     *
+     * @return QueryBuilder
+     */
+    public function whereNotIn($column, $values): QueryBuilder {
+        return $this->whereIn($column, $values, TRUE);
+    }
 
-    public function whereIn() { }
+    /**
+     * @param       $column
+     * @param array $values
+     * @param bool  $not
+     *
+     * @return $this
+     */
+    public function whereIn($column, array $values, $not = FALSE) {
+        $notSQL         = $not ? 'NOT' : '';
+        $bind_string = static::bindParamArray($column, $values, $this->value_binds);
 
-    public function whereNotIn() { }
+        $this->query['where'] = "WHERE {$column} {$notSQL} IN ($bind_string)";
 
-    public function whereBetween() { }
 
-    public function whereNotBetween() { }
+        return $this;
+    }
+
+    /**
+     * @param string $prefix
+     * @param array $values
+     * @param $bindArray
+     *
+     * @return string
+     */
+    public static function bindParamArray($prefix, $values, &$bindArray): string {
+        $str = '';
+        foreach ($values as $index => $value) {
+            $str                         .= ':' . $prefix . $index . ',';
+            $bindArray[$prefix . $index] = $value;
+        }
+
+        return rtrim($str, ',');
+    }
+
+    /**
+     * @param       $column
+     * @param array $values
+     * @param bool  $not
+     *
+     * @return QueryBuilder
+     * @throws QueryException
+     */
+    public function whereBetween($column, array $values, $not = FALSE): QueryBuilder {
+        $notSQL                  = $not ? 'NOT' : '';
+        if (\count($values)!==2) {
+            throw new QueryException('invalid amount of values in array, 2 only');
+        }
+        static::bindParamArray($column, [$values[0], $values[1]], $this->value_binds);
+        $this->query['where'] = "WHERE {$column} {$notSQL} BETWEEN :{$column}0 AND :{$column}1";
+        return $this;
+    }
+
+    /**
+     * @param       $column
+     * @param array $values
+     *
+     * @return QueryBuilder
+     * @throws \Poplar\Database\QueryException
+     */
+    public function whereNotBetween($column, array $values): QueryBuilder {
+        return $this->whereBetween($column, $values,TRUE);
+    }
+
+    public function whereDate($column,$date) {
+
+    }
 
     public function groupBy() { }
 
@@ -332,9 +429,9 @@ class QueryBuilder {
      * @return int
      * @throws QueryException
      */
-    public function insertGetId(Array $insert_array) {
+    public function insertGetId(Array $insert_array): int {
         if ( ! $this->insert($insert_array)) {
-            throw new QueryException();
+            throw new QueryException('Error inserting while getting ID');
         }
 
         return (int)$this->db->lastInsertId();
@@ -358,6 +455,10 @@ class QueryBuilder {
         }
     }
 
+    /**
+     * @return int
+     * @throws QueryException
+     */
     public function delete() {
         try {
             $this->stmt = $this->db->prepare($this->buildQueryString('DELETE'));
@@ -373,6 +474,12 @@ class QueryBuilder {
 
     }
 
+    /**
+     * @param array $update_array
+     *
+     * @return bool
+     * @throws QueryException
+     */
     public function update(array $update_array) {
         try {
             // process the update array
@@ -387,6 +494,10 @@ class QueryBuilder {
 
     }
 
+    /**
+     * @return bool
+     * @throws QueryException
+     */
     public function truncate() {
         try {
             $this->stmt = $this->db->prepare("TRUNCATE {$this->table}");
@@ -397,41 +508,48 @@ class QueryBuilder {
         }
     }
 
+    /**
+     * @param $column
+     * @param $amount
+     *
+     * @return bool
+     * @throws \PDOException
+     */
     public function increment($column, $amount) {
         try {
             $this->stmt =
                 $this->db->prepare("UPDATE {$this->table} SET {$column} = {$column} + {$amount} {$this->query['where']}");
             $this->bindValues();
+
             return $this->stmt->execute();
         } catch (\PDOException $e) {
-            throw new \PDOException($e);
+            throw $e;
         }
     }
 
+    /**
+     * @param $column
+     * @param $amount
+     *
+     * @return bool
+     * @throws \PDOException
+     */
     public function decrement($column, $amount) {
         try {
             $this->stmt =
                 $this->db->prepare("UPDATE {$this->table} SET {$column} = {$column} - {$amount} {$this->query['where']}");
             $this->bindValues();
+
             return $this->stmt->execute();
         } catch (\PDOException $e) {
-            throw new \PDOException($e);
+            throw $e;
         }
-    }
-
-    /**
-     * Check if the query string is valid sql
-     *
-     * @param $statement
-     */
-    private function validateQueryString($statement) {
-
     }
 
     /**
      * @return string
      */
-    private function queryStringSELECT() {
+    private function queryStringSELECT(): string {
         $string = sprintf('SELECT %s FROM %s %s;', $this->prepareColumns($this->query['columns']), $this->table,
             $this->query['where']);
 
@@ -443,15 +561,18 @@ class QueryBuilder {
      *
      * @return string
      */
-    private function prepareColumns($values) {
+    private function prepareColumns($values): string {
         if ($values) {
-            return implode(",", $values);
-        } else {
-            return '*';
+            return implode(',', $values);
         }
+
+        return '*';
     }
 
-    private function queryStringINSERT() {
+    /**
+     * @return string
+     */
+    private function queryStringINSERT(): string {
         $string = sprintf('INSERT INTO `%s` (`%s`) VALUES (%s);', $this->table,
             implode('`,`', array_keys($this->insert_array)), $this->prepareValues(array_keys($this->insert_array)));
 
@@ -465,7 +586,7 @@ class QueryBuilder {
      *
      * @return string
      */
-    private function prepareValues($values, $assoc = FALSE) {
+    private function prepareValues($values, $assoc = FALSE): string {
         if ($assoc) {
             $paramString = [];
             foreach ($values as $key => $val) {
@@ -475,21 +596,26 @@ class QueryBuilder {
             return implode(',', $paramString);
         }
         if ($values) {
-            return ":" . implode(",:", $values);
+            return ':' . implode(',:', $values);
         }
+        return '';
     }
 
-    private function queryStringUPDATE() {
+    /**
+     * @return string
+     */
+    private function queryStringUPDATE(): string {
         $string = sprintf('UPDATE `%s` SET %s %s;', $this->table, $this->prepareValues($this->update_array, TRUE),
             $this->query['where']);
 
         return $string;
     }
 
-    private function queryStringDELETE() {
-        $string = sprintf("DELETE FROM %s %s", $this->table, $this->query['where']);
-
-        return $string;
+    /**
+     * @return string
+     */
+    private function queryStringDELETE(): string {
+        return sprintf('DELETE FROM %s %s', $this->table, $this->query['where']);
     }
 
 }
