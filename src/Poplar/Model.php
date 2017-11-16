@@ -10,15 +10,16 @@ use Poplar\Exceptions\ModelException;
 use Poplar\Support\Str;
 
 class Model {
-    protected $table;
-    protected $columns;
-    protected $QB;
-
     static private $untouchable = [
         'id',
         'created_at',
         'updated_at'
     ];
+    protected      $exists      = FALSE;
+    protected      $table;
+    protected      $columns;
+    protected      $QB;
+    protected      $primary_key = 'id';
 
     public function __construct() {
         // set the table if empty
@@ -43,18 +44,25 @@ class Model {
 
     private static function getColumns() {
         $table  = self::table();
-        $output = DB::raw("SELECT * FROM {$table} LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+
+        $db_driver = DB::driver();
+
+        $translation = Database\Translations\Translation::getTranslation($db_driver);
+
+        $output = DB::raw("SHOW COLUMNS FROM {$table}")->fetchAll(PDO::FETCH_COLUMN);
+
+//        $output = DB::raw("PRAGMA table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
+
+        dd($output);
 
         return array_keys($output);
     }
 
     /**
-     * @param array $columns
-     *
-     * @return Support\Collection|Model[]
+     * @return Model[]|Support\Collection
      */
-    public static function all(array $columns = []) {
-        return static::buildModel()->get($columns);
+    public static function all() {
+        return static::buildModel()->get();
     }
 
     private static function buildModel(): Database\QueryBuilder {
@@ -101,6 +109,8 @@ class Model {
             return new static();
         }
 
+        $object->setExists(TRUE);
+
         return $object;
     }
 
@@ -126,6 +136,12 @@ class Model {
         return static::buildModel()->whereNotIn($column, $values);
     }
 
+    /**
+     * @param $id
+     *
+     * @return static
+     * @throws ModelException
+     */
     public static function findOrFail($id) {
         $object = $object = static::buildModel()->where(['id' => $id])->first();
 
@@ -135,21 +151,51 @@ class Model {
             throw new ModelException($name . ' could not be found');
         }
 
+        // set that the object exists in the DB
+        $object->setExists(TRUE);
+
         return $object;
     }
 
-    public static function destroy($ids) {
+    /**
+     * statically destroy a model object
+     *
+     * @param $ids
+     *
+     * @return int
+     */
+    public static function destroy($ids): int {
+        $ids = is_array($ids) ? $ids : func_get_args();
+
+        $identifier = static::findIdentifier();
+
+        return static::buildModel()->whereIn($identifier, $ids)->delete();
     }
 
-    private static function findIdent() {
-
+    private static function findIdentifier() {
+        return 'id';
     }
 
     public function save(): bool {
-        return $this->update();
+        if ($this->exists()) {
+            return $this->update();
+        }
+
+        return $this->add();
+    }
+
+    /**
+     * @return bool
+     */
+    public function exists(): bool {
+        return $this->exists;
     }
 
     public function update(): bool {
+        if ( ! $this->exists()) {
+            return FALSE;
+        }
+
         $where_arr = $this->checkIdentifier();
         $arr       = $this->generateSaveArray();
 
@@ -157,12 +203,28 @@ class Model {
     }
 
     /**
+     * @return bool
+     */
+    private function add() {
+
+        $arr = $this->generateSaveArray();
+
+        if ($this->{$this->primary_key} = static::buildModel()->insertGetId($arr)) {
+            $this->setExists(TRUE);
+
+            return TRUE;
+        }
+
+        return FALSE;
+    }
+
+    /**
      * @param bool|array $where_clause
      *
-     * @return bool
+     * @return array
      * @throws ModelException
      */
-    private function checkIdentifier(array $where_clause = []): bool {
+    private function checkIdentifier(array $where_clause = []): array {
         if (isset($this->identifier)) {
             if (empty($this->{$this->identifier})) {
                 throw new ModelException('Identifier set for model but no value found');
@@ -179,25 +241,47 @@ class Model {
     private function generateSaveArray(): array {
         $out = [];
         foreach ($this->columns as $column) {
-            $out[$column] = $this->$column;
-        }
-        // unset any untouchables out of the dynamic save array
-        foreach (self::$untouchable as $item) {
-            unset($this->$item);
+            if (in_array($column, self::$untouchable)) {
+                continue;
+            }
+            $out[$column] = $this->$column ?? NULL;
         }
 
         return $out;
     }
 
-    public function toJson() {
+    /**
+     * @param boolean $boolean
+     *
+     * @return static
+     */
+    public function setExists($boolean) {
+        $this->exists = $boolean;
 
+        return $this;
+    }
+
+    /**
+     * Return the model to JSON string
+     *
+     * @return string
+     */
+    public function toJson() {
+        return json_encode($this);
     }
 
     public function getKey() {
 
     }
 
+    /**
+     *
+     */
     public function delete() {
+        // if this doesn't exist, don't delete it
+        if ( ! $this->exists()) {
+            return;
+        }
 
     }
 

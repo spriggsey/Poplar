@@ -22,7 +22,7 @@ class Router {
     private   $all_methods    = ['GET', 'POST', 'PUT', 'DELETE'];
 
     function __construct() {
-        $this->uri          = Request::uri();
+        $this->uri          = Request::getURI();
         $this->method       = Request::method();
         $this->query_string = Request::queryString();
     }

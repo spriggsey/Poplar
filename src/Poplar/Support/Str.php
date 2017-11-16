@@ -1098,4 +1098,10 @@ class Str {
     public static function substr($string, $start, $length = NULL): string {
         return mb_substr($string, $start, $length, 'UTF-8');
     }
+
+    public static function validJson($string) {
+        if (!is_string($string)) {return false;}
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
 }

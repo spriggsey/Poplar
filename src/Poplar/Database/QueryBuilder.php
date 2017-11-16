@@ -5,6 +5,7 @@ namespace Poplar\Database;
 
 
 use PDO;
+use Poplar\Model;
 use Poplar\Support\Collection;
 
 /**
@@ -41,6 +42,7 @@ class QueryBuilder {
         $this->db = $db;
         $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
+
 
     /**
      * @param $name
@@ -198,7 +200,17 @@ class QueryBuilder {
 
         $result = $this->stmt->fetchAll();
 
-        return collect($result);
+        // if this is a bound model, foreach through all and set them as
+        // existing in the DB
+        if ( ! empty($this->model)) {
+            /** @var Model[] $result */
+            foreach ($result as $object) {
+                $object->setExists(TRUE);
+            }
+        }
+
+        return p_collect($result);
+
     }
 
     /**
@@ -254,7 +266,7 @@ class QueryBuilder {
      * @return bool
      */
     public function chunk(int $count, callable $closure): bool {
-        foreach ((array) $this->get()->chunk($count) as $chunk_array) {
+        foreach ((array)$this->get()->chunk($count) as $chunk_array) {
             if ($closure($chunk_array) === FALSE) {
                 return FALSE;
             }
@@ -348,19 +360,18 @@ class QueryBuilder {
      * @return $this
      */
     public function whereIn($column, array $values, $not = FALSE) {
-        $notSQL         = $not ? 'NOT' : '';
+        $notSQL      = $not ? 'NOT' : '';
         $bind_string = static::bindParamArray($column, $values, $this->value_binds);
 
         $this->query['where'] = "WHERE {$column} {$notSQL} IN ($bind_string)";
-
 
         return $this;
     }
 
     /**
      * @param string $prefix
-     * @param array $values
-     * @param $bindArray
+     * @param array  $values
+     * @param        $bindArray
      *
      * @return string
      */
@@ -377,33 +388,34 @@ class QueryBuilder {
     /**
      * @param       $column
      * @param array $values
+     *
+     * @return QueryBuilder
+     * @throws \Poplar\Database\QueryException
+     */
+    public function whereNotBetween($column, array $values): QueryBuilder {
+        return $this->whereBetween($column, $values, TRUE);
+    }
+
+    /**
+     * @param       $column
+     * @param array $values
      * @param bool  $not
      *
      * @return QueryBuilder
      * @throws QueryException
      */
     public function whereBetween($column, array $values, $not = FALSE): QueryBuilder {
-        $notSQL                  = $not ? 'NOT' : '';
-        if (\count($values)!==2) {
+        $notSQL = $not ? 'NOT' : '';
+        if (\count($values) !== 2) {
             throw new QueryException('invalid amount of values in array, 2 only');
         }
         static::bindParamArray($column, [$values[0], $values[1]], $this->value_binds);
         $this->query['where'] = "WHERE {$column} {$notSQL} BETWEEN :{$column}0 AND :{$column}1";
+
         return $this;
     }
 
-    /**
-     * @param       $column
-     * @param array $values
-     *
-     * @return QueryBuilder
-     * @throws \Poplar\Database\QueryException
-     */
-    public function whereNotBetween($column, array $values): QueryBuilder {
-        return $this->whereBetween($column, $values,TRUE);
-    }
-
-    public function whereDate($column,$date) {
+    public function whereDate($column, $date) {
 
     }
 
@@ -547,6 +559,24 @@ class QueryBuilder {
     }
 
     /**
+     * Resets the query builder
+     */
+    public function resetData() {
+        $this->value_binds = [];
+        $this->query       = [
+            "action"  => NULL,
+            "columns" => NULL,
+            "where"   => NULL,
+            "table"   => NULL,
+            "order"   => NULL,
+        ];
+        $this->table       = NULL;
+        $this->model       = NULL;
+
+        return $this;
+    }
+
+    /**
      * @return string
      */
     private function queryStringSELECT(): string {
@@ -598,6 +628,7 @@ class QueryBuilder {
         if ($values) {
             return ':' . implode(',:', $values);
         }
+
         return '';
     }
 

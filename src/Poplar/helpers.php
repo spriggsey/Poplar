@@ -75,6 +75,9 @@ if ( ! function_exists('dd')) {
             } elseif ($x instanceof \Illuminate\Support\Collection) {
                 header('Content-Type: application/json');
                 echo $x->toJson();
+            } elseif (str::validJson($x)) {
+                header('Content-Type: application/json');
+                echo $x;
             } else {
                 dump($x);
             }
@@ -123,8 +126,9 @@ if ( ! function_exists('view')) {
         return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
     }
 }
-if ( ! function_exists('collect')) {
-    function collect($array) {
+
+if ( ! function_exists('p_collect')) {
+    function p_collect($array) {
         return new \Poplar\Support\Collection($array);
     }
 }

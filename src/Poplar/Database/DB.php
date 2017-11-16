@@ -4,7 +4,10 @@
 namespace Poplar\Database;
 
 
+use Poplar\Application;
+
 class DB {
+    /** @var QueryBuilder self::$db */
     private static $db;
 
     /**
@@ -16,11 +19,16 @@ class DB {
         return self::getDB()->setTable($name);
     }
 
+    /**
+     * // retrieve the query builder but reset all data first
+     *
+     * @return QueryBuilder
+     */
     private static function getDB() {
         if (empty(self::$db)) {
-            return self::$db = database();
+            return self::$db = database()->resetData();
         } else {
-            return self::$db;
+            return self::$db->resetData();
         }
     }
 
@@ -32,6 +40,11 @@ class DB {
     public static function raw($statement) {
         return
         self::getDB()->raw($statement);
+    }
+
+    public static function driver() {
+        return
+        Application::get('database')->getDriver();
     }
 
 }

@@ -26,7 +26,7 @@ class Request {
     /**
      * @return string
      */
-    private static function getURI(): string {
+    public static function getURI(): string {
         if (NULL !== self::$uri) {
             return self::$uri;
         }

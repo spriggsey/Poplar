@@ -51,4 +51,8 @@ class Connection {
         $path = Application::basePath().$this->config['database'];
         return new PDO("sqlite:{$path}");
     }
+
+    public function getDriver() {
+        return $this->driver;
+    }
 }
