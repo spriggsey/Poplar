@@ -3,7 +3,5 @@
 namespace Poplar\Database\Translations;
 
 interface TranslationInterface {
-    static function columns();
-
-
+    static function columns($table);
 }

@@ -6,6 +6,7 @@ namespace Poplar;
 
 use PDO;
 use Poplar\Database\DB;
+use Poplar\Database\Translations\Translation;
 use Poplar\Exceptions\ModelException;
 use Poplar\Support\Str;
 
@@ -44,18 +45,9 @@ class Model {
 
     private static function getColumns() {
         $table  = self::table();
-
         $db_driver = DB::driver();
-
-        $translation = Database\Translations\Translation::getTranslation($db_driver);
-
-        $output = DB::raw("SHOW COLUMNS FROM {$table}")->fetchAll(PDO::FETCH_COLUMN);
-
-//        $output = DB::raw("PRAGMA table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
-
-        dd($output);
-
-        return array_keys($output);
+        $translation = Translation::getTranslation($db_driver);
+        return $translation->columns($table);
     }
 
     /**
@@ -244,9 +236,9 @@ class Model {
             if (in_array($column, self::$untouchable)) {
                 continue;
             }
+            if (!isset($this->$column)) {continue;}
             $out[$column] = $this->$column ?? NULL;
         }
-
         return $out;
     }
 
