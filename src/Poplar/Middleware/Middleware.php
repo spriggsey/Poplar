@@ -1,14 +1,22 @@
 <?php
 
 
-namespace Poplar;
+namespace Poplar\Middleware;
 
 
+use Poplar\Application;
 use Poplar\Exceptions\MiddlewareException;
+use Poplar\Request;
 
 abstract class Middleware {
     // these are the routes on which an instance of middleware needs to be called
     static $routes = [];
+
+    public static function call($base_uri) {
+        return (new static())->execute($base_uri);
+    }
+
+    abstract public function execute($base_uri);
 
     public static function register($base_uri, $class) {
         $class_string = "App\\Middleware\\" . $class;
@@ -23,12 +31,22 @@ abstract class Middleware {
         }
     }
 
+
     /**
+     * this needs to be created on subclasses as this is the main function that will be tested for truth.
+     * subclasses can use any number of other functions to produce the false/truth as long as they all use this function
+     *
      * @param string $base_uri
      *
      * @return bool
      */
     public static function checkMiddleware($base_uri) {
+
+        if (Request::isWeb()) {
+            // throw them onto the web middleware
+            Web::call($base_uri);
+        }
+
         // we need to check the full URI at the base upwards, we ONLY check for a str_pos and position 0
         // even if there's a match, we need to ensure its at the right place.
         foreach (array_keys(static::$routes) as $uri) {
@@ -43,11 +61,13 @@ abstract class Middleware {
         return TRUE;
     }
 
-    // this needs to be created on subclasses as this is the main function that will be tested for truth.
-    // subclasses can use any number of other functions to produce the false/truth as long as they all use this function
-    abstract public function execute($base_uri);
-
-    // we require a function to return the use either to a authentication or authenticated area if required.
-    // this could simply throw a 403 error or have a custom login page.
-    abstract public function redirect($redirect_from);
+    /**
+     * we require a function to return the use either to a authentication or authenticated area if required.
+     * this could simply throw a 403 error or have a custom login page.
+     *
+     * @param $reason
+     *
+     * @return mixed
+     */
+    abstract protected function handleError($reason);
 }

@@ -11,6 +11,7 @@ class Input {
     static private $fileData = [];
 
     static private $oldData = [];
+    private static $csrf;
 
     /**
      * @param string $name
@@ -52,8 +53,7 @@ class Input {
         $object = self::$oldData;
         $object = array_merge($object, self::$data);
 
-        return
-        collect($object);
+        return new Collection($object);
     }
 
     /**
@@ -71,7 +71,7 @@ class Input {
             $object[$name] = self::$data[$name];
         }
 
-        return collect($object);
+        return new Collection($object);
     }
 
     /**
@@ -88,7 +88,7 @@ class Input {
             unset($object[$name]);
         }
 
-        return collect($object);
+        return new Collection($object);
     }
 
     public static function processData() {
@@ -113,6 +113,12 @@ class Input {
             }
             unset($_SESSION['flashData']);
         }
+        self::$csrf = self::$data['X-CSRF-TOKEN']??'';
+        self::unsetCSRF();
+    }
+
+    public static function CSRF() {
+        return self::$csrf;
     }
 
     public static function setData($name, $val) {

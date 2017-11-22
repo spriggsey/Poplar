@@ -4,7 +4,6 @@
 namespace Poplar\Support;
 
 use Illuminate\Support\Traits\Macroable;
-
 class Str {
     use Macroable;
 

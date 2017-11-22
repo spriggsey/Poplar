@@ -105,7 +105,7 @@ if ( ! function_exists('class_basename')) {
 
 if ( ! function_exists('array_get')) {
     function array_get($array, $path) {
-        return \Illuminate\Support\Arr::get($array, $path);
+        return \Poplar\Support\Arr::get($array, $path);
     }
 }
 if ( ! function_exists('view')) {
@@ -124,12 +124,6 @@ if ( ! function_exists('view')) {
         }
 
         return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
-    }
-}
-
-if ( ! function_exists('p_collect')) {
-    function p_collect($array) {
-        return new \Poplar\Support\Collection($array);
     }
 }
 if ( ! function_exists('database')) {

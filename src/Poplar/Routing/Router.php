@@ -8,7 +8,7 @@ use Poplar\Application;
 use Poplar\Exceptions\ModelException;
 use Poplar\Exceptions\RouterException;
 use Poplar\Input;
-use Poplar\Middleware;
+use Poplar\Middleware\Middleware;
 use Poplar\Model;
 use Poplar\Notification;
 use Poplar\Request;
@@ -102,8 +102,6 @@ class Router {
         if (empty($successful_route)) {
             throw new RouterException('Nothing found at this location');
         }
-        // grab inputs as CSRF might be required regardless of if this is a real route
-        Input::processData();
         // fire a middleware check, if nothing happens then it has no problems
         // any redirecting or errors should be handled at the class level
         Middleware::checkMiddleware(array_values($successful_route)[0]);

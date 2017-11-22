@@ -21,6 +21,8 @@ class Request {
         self::$previous_page = Input::storePreviousPage();
         self::$client_ip     = $_SERVER['REMOTE_ADDR'];
         self::$server_ip     = $_SERVER['HTTP_HOST'];
+        // grab inputs
+        Input::processData();
     }
 
     /**
@@ -64,6 +66,12 @@ class Request {
 
     public static function queryString() {
         return $_SERVER['QUERY_STRING'] ?? NULL;
+    }
+
+    public static function isWeb() {
+        if (self::isAJAX()) {return FALSE;}
+        // we need to look further here to see if its a web requested resource
+        return TRUE;
     }
 
     /**

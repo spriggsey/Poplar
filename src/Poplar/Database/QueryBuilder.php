@@ -209,8 +209,7 @@ class QueryBuilder {
             }
         }
 
-        return p_collect($result);
-
+        return new Collection($result);
     }
 
     /**
