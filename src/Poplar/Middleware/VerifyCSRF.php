@@ -26,12 +26,4 @@ class VerifyCSRF extends Middleware {
         }
         return TRUE;
     }
-
-    protected function handleError($reason) {
-        if (!Request::isWeb()) {
-            http_response_code(403);
-            dd(['error'=>$reason]);
-        }
-        throw new MiddlewareException($reason);
-    }
 }

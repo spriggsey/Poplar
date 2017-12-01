@@ -8,8 +8,4 @@ class Web extends Middleware {
         // call the verify CSRF middleware
         VerifyCSRF::call($base_uri);
     }
-
-    public function handleError($reason) {
-        // TODO: Implement handleError() method.
-    }
 }

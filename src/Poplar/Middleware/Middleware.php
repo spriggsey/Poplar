@@ -68,6 +68,13 @@ abstract class Middleware {
      * @param $reason
      *
      * @return mixed
+     * @throws MiddlewareException
      */
-    abstract protected function handleError($reason);
+    protected function handleError($reason) {
+        if ( ! Request::isWeb()) {
+            http_response_code(403);
+            dd(['error' => $reason]);
+        }
+        throw new MiddlewareException($reason);
+    }
 }
