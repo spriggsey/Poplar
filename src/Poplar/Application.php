@@ -4,6 +4,7 @@
 namespace Poplar;
 
 
+use Poplar\Auth\Session;
 use Poplar\Database\QueryBuilder;
 use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;
@@ -29,6 +30,7 @@ class Application {
         // register the database class but we do not connect until required
         $this->registerDatabase();
 
+        Application::bind('CSRF', Application::user() ? Session::get('db') : Session::get('local'));
     }
 
     /**
@@ -85,7 +87,11 @@ class Application {
     }
 
     public static function user() {
-        return self::get('user');
+        try {
+            return self::get('user');
+        } catch (\Exception $e) {
+            return FALSE;
+        }
     }
 
     public static function bind($key, $value) {

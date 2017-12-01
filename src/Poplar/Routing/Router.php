@@ -7,7 +7,6 @@ namespace Poplar\Routing;
 use Poplar\Application;
 use Poplar\Exceptions\ModelException;
 use Poplar\Exceptions\RouterException;
-use Poplar\Input;
 use Poplar\Middleware\Middleware;
 use Poplar\Model;
 use Poplar\Notification;
@@ -19,7 +18,11 @@ class Router {
     protected $method;
     protected $query_string;
     protected $model_bindings = [];
-    private   $all_methods    = ['GET', 'POST', 'PUT', 'DELETE'];
+    protected $pre_middleware_bound = [];
+
+    // automatic binding for routes depending on whats in these vars
+    private   $all_methods    = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
+    private   $pre_namespace_bound  = '';
 
     function __construct() {
         $this->uri          = Request::getURI();
@@ -46,7 +49,7 @@ class Router {
         }
         // we need to check the full URI at the base upwards, we ONLY check for a str_pos and position 0
         // even if there's a match, we need to ensure its at the right place.
-        if (strpos(Request::uri(), $uri) === 0) {
+        if (strpos(Request::getURI(), $uri) === 0) {
             return TRUE;
         }
 
@@ -56,19 +59,48 @@ class Router {
     public static function isInFile($uri) {
         $uri = trim($uri, '/');
         if (empty($uri)) {
-            if (Request::uri() === $uri) {
+            if (Request::getURI() === $uri) {
                 return TRUE;
             }
 
             return FALSE;
         }
         $uri   = explode('/', trim($uri, '/'));
-        $match = explode('/', Request::uri());
+        $match = explode('/', Request::getURI());
         if (strpos(end($match), end($uri)) === 0) {
             return TRUE;
         }
 
         return FALSE;
+    }
+
+    /**
+     * @param          $array
+     * @param callable $closure
+     *
+     * @see $this
+     */
+    public function middlewareGroup($array, callable $closure) {
+        // if a string, cast to array
+        if (is_string($array)) {
+            $array = [$array];
+        }
+        // put the pre middleware into the slot so that the routes are processed with this
+        // array push this as we want to allow recursive looks in
+        $this->pre_middleware_bound = array_merge($this->pre_middleware_bound, $array);
+        // call the closure
+        $closure();
+        // empty the pre middleware now we are done.
+        $this->pre_middleware_bound = '';
+    }
+
+    public function namespace($string, $closure) {
+        // add the namespace to the end of the string, this allows recursive action
+        $this->pre_namespace_bound .= $string . '\\';
+        // call the closure with itself inside
+        $closure($this);
+        // strip off the namespace after we are done with the closure
+        $this->pre_namespace_bound = str_replace($string . '\\', '', $this->pre_namespace_bound);
     }
 
     public function pathFind() {
@@ -140,8 +172,6 @@ class Router {
             }
 
         }
-
-
         // if the route controller is simply a callback function, then give that instead.
         if (is_callable($route_info['controller'])) {
             return $route_info['controller']($vars);
@@ -233,7 +263,7 @@ class Router {
 
         // this route both can be called to update the object
         // THIS ROUTE WILL USE THE READ BINDING FROM ABOVE
-        $this->put("{$basepath}/{id}", "{$controller}@update");
+        $this->patch("{$basepath}/{id}", "{$controller}@update");
 
         // this route will delete the object given an id
         $this->bind("{$basepath}/{id}/delete", 'id', $model);
@@ -241,10 +271,33 @@ class Router {
         $this->delete("{$basepath}/{id}", "{$controller}@postDelete");
     }
 
-    // Shorthand functions for all routes
-
     public function get(string $path, $controller) {
         $this->makeRoute($path, ['GET'], $controller);
+    }
+
+    public function post($path, $controller) {
+        $this->makeRoute($path, ['POST'], $controller);
+    }
+
+    public function bind($url, $slug, $class) {
+        $class_string = "App\\Models\\" . $class;
+        // first check that this is a real model class
+        if (class_exists($class_string)) {
+            try {
+                $object = new $class_string();
+            } catch (\Error $e) {
+                throw new RouterException($e);
+            }
+            $this->model_bindings[trim($url, '/')] = (object)[$slug => $object];
+        }
+    }
+
+    public function put($path, $controller) {
+        $this->makeRoute($path, ['PUT'], $controller);
+    }
+
+    public function delete($path, $controller) {
+        $this->makeRoute($path, ['DELETE'], $controller);
     }
 
     /**
@@ -253,6 +306,9 @@ class Router {
      * @param        $controller
      */
     public function makeRoute(string $path, $methods = [], $controller) {
+
+        $controller = $this->checkPreNamespaceBound($controller);
+
         // place the route on all methods if none supplied
         if (empty($methods)) {
             $methods = $this->all_methods;
@@ -276,35 +332,32 @@ class Router {
                 $this->routes[$method][trim($path, '/')]['controller'] = $controller;
             }
         }
+        // check if the route is pre-bound to a middleware
+        $this->checkPreBoundMiddleware($path);
     }
 
-    public function post($path, $controller) {
-        $this->makeRoute($path, ['POST'], $controller);
-    }
-    // end shorthand functions
-
-    // resource will build a bunch of paths dynamically using a base url and controller
-    // the controller still needs to be created with the routes specified
-
-    public function bind($url, $slug, $class) {
-        $class_string = "App\\Models\\" . $class;
-        // first check that this is a real model class
-        if (class_exists($class_string)) {
-            try {
-                $object = new $class_string();
-            } catch (\Error $e) {
-                throw new RouterException($e);
-            }
-            $this->model_bindings[trim($url, '/')] = (object)[$slug => $object];
+    private function checkPreNamespaceBound($controller) {
+        // exit out if no namespace is added
+        if (empty($this->pre_namespace_bound)) {
+            return $controller;
         }
+
+        return $this->pre_namespace_bound . $controller;
     }
 
-    public function put($path, $controller) {
-        $this->makeRoute($path, ['PUT'], $controller);
+    private function checkPreBoundMiddleware($path) {
+        // exit if no pre bound middleware exists
+        if (empty($this->pre_middleware_bound)) {
+            return;
+        }
+        foreach ($this->pre_middleware_bound as $middleware) {
+            Middleware::register($path, $middleware);
+        }
+
     }
 
-    public function delete($path, $controller) {
-        $this->makeRoute($path, ['DELETE'], $controller);
+    public function patch($path, $controller) {
+        $this->makeRoute($path, ['PATCH'], $controller);
     }
 
 

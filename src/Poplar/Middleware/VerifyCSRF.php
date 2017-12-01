@@ -28,9 +28,9 @@ class VerifyCSRF extends Middleware {
     }
 
     protected function handleError($reason) {
-        if (Request::isAJAX()) {
+        if (!Request::isWeb()) {
             http_response_code(403);
-            dd($reason);
+            dd(['error'=>$reason]);
         }
         throw new MiddlewareException($reason);
     }

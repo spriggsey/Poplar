@@ -134,3 +134,22 @@ if ( ! function_exists('database')) {
         return \Poplar\Application::database();
     }
 }
+
+if ( ! function_exists('getCSRF')) {
+    function getCSRF() {
+        if (\Poplar\Application::get('CSRF')) {
+            return \Poplar\Application::get('CSRF');
+        } else {
+            return NULL;
+        }
+    }
+}
+if ( ! function_exists('CSRFInput')) {
+    function CSRFInput() {
+        if (\Poplar\Application::get('csrf')) {
+            return "<input type='hidden' name='X-CSRF-TOKEN' value='" . \Poplar\Application::get('CSRF') . "'>";
+        } else {
+            return NULL;
+        }
+    }
+}

@@ -4,6 +4,9 @@
 namespace Poplar;
 
 
+use Poplar\Auth\Session;
+use Poplar\Support\Str;
+
 class Request {
     public static  $allowed_methods = ['GET', 'POST', 'PUT', 'DELETE'];
     public static  $previous_page;
@@ -68,9 +71,24 @@ class Request {
         return $_SERVER['QUERY_STRING'] ?? NULL;
     }
 
+    /**
+     * @return bool
+     */
     public static function isWeb() {
-        if (self::isAJAX()) {return FALSE;}
-        // we need to look further here to see if its a web requested resource
+        if (self::isAJAX()) {
+            return FALSE;
+        }
+        if ( ! isset($_SERVER['HTTP_USER_AGENT'])) {
+            return FALSE;
+        }
+        // if the request allows text/html then we can assume its a browser request
+        if (!Str::contains($_SERVER['HTTP_ACCEPT'],'text/html')) {
+            return FALSE;
+        }
+        // if the request is asking for json, we can easily assume that it isnt a browser
+        if (!Str::contains($_SERVER['CONTENT_TYPE'],'application/json')) {
+            return FALSE;
+        }
         return TRUE;
     }
 
@@ -104,8 +122,14 @@ class Request {
     }
 
     public static function isAJAX(): bool {
-        return ( ! empty($_SERVER['HTTP_X_REQUESTED_WITH'])
-            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest');
+
+        if ( ! empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+        ) {
+            return TRUE;
+        }
+
+        return FALSE;
     }
 
 }

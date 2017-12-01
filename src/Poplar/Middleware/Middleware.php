@@ -19,7 +19,11 @@ abstract class Middleware {
     abstract public function execute($base_uri);
 
     public static function register($base_uri, $class) {
-        $class_string = "App\\Middleware\\" . $class;
+        if (!class_exists($class)) {
+            $class_string = "App\\Middleware\\" . $class;
+        } else {
+            $class_string = $class;
+        }
         // first check that this is a real middleware class
         if (class_exists($class_string)) {
             try {
@@ -41,16 +45,12 @@ abstract class Middleware {
      * @return bool
      */
     public static function checkMiddleware($base_uri) {
-
-        if (Request::isWeb()) {
-            // throw them onto the web middleware
-            Web::call($base_uri);
-        }
-
+        if ($base_uri==='') {$base_uri = '/';}
         // we need to check the full URI at the base upwards, we ONLY check for a str_pos and position 0
         // even if there's a match, we need to ensure its at the right place.
         foreach (array_keys(static::$routes) as $uri) {
-            if (strpos($base_uri, $uri) === 0) {
+            $processed_uri = $uri === '' ? '/' : $uri;
+            if (strpos($base_uri, $processed_uri) === 0) {
                 // we then call the execute on the stored route
                 // call this instance of middleware. if it redirects or dies, then there was an issue
                 self::$routes[$uri]->execute($base_uri);

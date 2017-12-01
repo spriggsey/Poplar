@@ -11,12 +11,12 @@ use Poplar\Exceptions\SessionException;
 class Session {
     public static  $session;
     public static  $table_name = 'sessions';
-    public static  $hash;
+    public static  $hash = NULL;
     public static  $debug_mode;
     private static $db_entry;
 
     private static function getLocalHash() {
-        return self::$hash ?? $_SESSION['identifier'] ?? self::generateHash();
+        return self::$hash ?? $_SESSION['identifier'] ?? $_SESSION['identifier'] = self::generateHash();
     }
 
     public function store($user_id = FALSE) {
@@ -128,7 +128,7 @@ class Session {
     }
 
     private static function generateHash() {
-        self::$hash = hash('sha256', date('Y-m-d G:i:s') . random_bytes(10));
+        return  self::$hash = hash('sha256', date('Y-m-d G:i:s') . random_bytes(10));
     }
 
     public static function get($type) {
