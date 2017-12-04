@@ -25,6 +25,7 @@ class QueryBuilder {
         "where"   => NULL,
         "table"   => NULL,
         "order"   => NULL,
+        "join"    => NULL
     ];
     /** @var \PDOStatement $stmt */
     private $stmt;
@@ -418,6 +419,30 @@ class QueryBuilder {
 
     }
 
+    /**
+     * @param $target_table
+     * @param $target_on
+     * @param $local_on
+     *
+     * @return $this
+     */
+    public function join($target_table,$target_on,$local_on) {
+        $this->query['join'] = "INNER JOIN $target_table ON $target_on = $local_on";
+        return $this;
+    }
+
+    /**
+     * @param $target_table
+     * @param $target_on
+     * @param $local_on
+     *
+     * @return $this
+     */
+    public function leftJoin($target_table,$target_on,$local_on) {
+        $this->query['join'] = "LEFT JOIN $target_table ON $target_on = $local_on";
+        return $this;
+    }
+
     public function groupBy() { }
 
     public function having() { }
@@ -568,6 +593,7 @@ class QueryBuilder {
             "where"   => NULL,
             "table"   => NULL,
             "order"   => NULL,
+            "join"    => NULL,
         ];
         $this->table       = NULL;
         $this->model       = NULL;
@@ -579,7 +605,8 @@ class QueryBuilder {
      * @return string
      */
     private function queryStringSELECT(): string {
-        $string = sprintf('SELECT %s FROM %s %s;', $this->prepareColumns($this->query['columns']), $this->table,
+        $string = sprintf('SELECT %s FROM %s %s %s;', $this->prepareColumns($this->query['columns']), $this->table,
+            $this->query['join'],
             $this->query['where']);
 
         return $string;

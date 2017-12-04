@@ -4,7 +4,6 @@
 namespace Poplar;
 
 
-use PDO;
 use Poplar\Database\DB;
 use Poplar\Database\Translations\Translation;
 use Poplar\Exceptions\ModelException;
@@ -16,6 +15,7 @@ class Model {
         'created_at',
         'updated_at'
     ];
+    protected      $id;
     protected      $exists      = FALSE;
     protected      $table;
     protected      $columns;
@@ -44,9 +44,10 @@ class Model {
     }
 
     private static function getColumns() {
-        $table  = self::table();
-        $db_driver = DB::driver();
+        $table       = self::table();
+        $db_driver   = DB::driver();
         $translation = Translation::getTranslation($db_driver);
+
         return $translation->columns($table);
     }
 
@@ -236,9 +237,12 @@ class Model {
             if (in_array($column, self::$untouchable)) {
                 continue;
             }
-            if (!isset($this->$column)) {continue;}
+            if ( ! isset($this->$column)) {
+                continue;
+            }
             $out[$column] = $this->$column ?? NULL;
         }
+
         return $out;
     }
 
