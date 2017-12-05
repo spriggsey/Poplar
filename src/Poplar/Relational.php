@@ -36,7 +36,7 @@ trait Relational {
             throw new \Exception('Unknown model provided in argument');
         }
 
-        return $object::where([$foreign_key=>$this->{$local_key}])->first();
+        return $object::where([$foreign_key => $this->{$local_key}])->first();
     }
 
     /**
@@ -66,7 +66,8 @@ trait Relational {
         } else {
             throw new \Exception('Unknown model provided in argument');
         }
-        return $object::where([$foreign_key=>$this->{$local_key}])->get();
+
+        return $object::where([$foreign_key => $this->{$local_key}])->get();
     }
 
     /**
@@ -101,7 +102,7 @@ trait Relational {
         }
 
         try {
-            return $object::where([$foreign_key=>$this->{$local_key}])->get();
+            return $object::where([$foreign_key => $this->{$local_key}])->get();
         } catch (ModelException $e) {
             return FALSE;
         }
@@ -130,11 +131,10 @@ trait Relational {
             $intermediate_table = implode("_", $array);
         }
 
-        return Database\DB::table($intermediate_table)->join(
-            $class_string::table(),
-            "`{$class_string::table()}`.id",
-            "`{$intermediate_table}`.{$lowercase_target_class}_id")->where(["{$class_end}_id"=> $this->{$local_key}])
-            ->get();
+        return Database\DB::table($intermediate_table)->bindModel($class_string)
+            ->join($class_string::table(), "`{$class_string::table()}`.id",
+                "`{$intermediate_table}`.{$lowercase_target_class}_id")
+            ->where(["{$class_end}_id" => $this->{$local_key}])->get();
     }
 
     /**
@@ -153,8 +153,6 @@ trait Relational {
         $target_model,
         array $extra_fields = NULL
     ) {
-        /** @var QueryBuilder $QB */
-        $QB = App::get('database');
         // reflect on the class that called this so we can grab the
         // we need to find the identifier of this class, if not set then is should be ID
         $class_ident = (! empty($this->identifier) ? $this->identifier : 'id');
@@ -173,7 +171,7 @@ trait Relational {
                 $props = array_merge($props, $extra_fields);
             }
             try {
-                $QB->add($pivot_table, $props);
+                Application::database()->setTable($pivot_table)->insert($props);
             } catch (\Exception $e) {
                 return FALSE;
             }
@@ -187,11 +185,10 @@ trait Relational {
      *
      * @return string
      */
-    private function getPivotTable($target_model) {
-        $lowercase_target_class = camelToSnakeCase($target_model);
+    static private function getPivotTable($target_model) {
+        $lowercase_target_class = Str::snake($target_model);
         $orig_class             = explode('\\', static::class);
-        $class_end              = camelToSnakeCase(end($orig_class));
-        $class_string           = "App\\Models\\" . $target_model;
+        $class_end              = Str::snake(end($orig_class));
         $array                  = [$lowercase_target_class, $class_end];
         sort($array);
 
@@ -203,10 +200,10 @@ trait Relational {
      *
      * @return array
      */
-    private function getPivotIds($target_model) {
-        $lowercase_target_class = camelToSnakeCase($target_model);
+    static private function getPivotIds($target_model) {
+        $lowercase_target_class = Str::snake($target_model);
         $orig_class             = explode('\\', static::class);
-        $class_end              = camelToSnakeCase(end($orig_class));
+        $class_end              = Str::snake(end($orig_class));
 
         return [
             'self'   => "{$class_end}_id",
@@ -223,23 +220,20 @@ trait Relational {
      * @return bool
      */
     protected function detach($model_identifier, $target_model) {
-        /** @var QueryBuilder $QB */
-        $QB = App::get('database');
-        // reflect on the class that called this so we can grab the
         // we need to find the identifier of this class, if not set then is should be ID
         $class_ident = (! empty($this->identifier) ? $this->identifier : 'id');
-        $pivot_table = $this->getPivotTable($target_model);
-        $pivod_ids   = $this->getPivotIds($target_model);
+        $pivot_table = $this::getPivotTable($target_model);
+        $pivot_ids   = $this::getPivotIds($target_model);
 
         if ( ! is_array($model_identifier)) {
             $model_identifier = [$model_identifier];
         }
         foreach ($model_identifier as $identifier) {
             try {
-                $QB->delete($pivot_table, [
-                    $pivod_ids['self']   => $this->$class_ident,
-                    $pivod_ids['target'] => $identifier,
-                ]);
+                Application::database()->setTable($pivot_table)->where([
+                    $pivot_ids['self']   => $this->$class_ident,
+                    $pivot_ids['target'] => $identifier,
+                ])->delete();
             } catch (\Exception $e) {
                 return FALSE;
             }

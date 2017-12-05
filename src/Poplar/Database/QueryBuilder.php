@@ -76,10 +76,12 @@ class QueryBuilder {
      * @return string
      */
     private function processWhereClause($params) {
+
         if (\count($params) === 1) {
             return $this->processWhereClauseArray($params[0]);
+        } elseif (\count($params) > 2) {
+            return $this->processWhereClauseArray($params);
         }
-
         return $this->processWhereClauseSingle($params);
     }
 
@@ -105,16 +107,14 @@ class QueryBuilder {
      */
     private function processWhereClauseArray($array): string {
         $whereString = [];
-        if (\count($array) === 1) {
-            foreach ((array)$array as $key => $val) {
-                if (\is_array($val)) {
-                    $whereString[] = "{$val[0]}{$val[1]}:{$val[0]}";
+        foreach ((array)$array as $key => $val) {
+            if (\is_array($val)) {
+                $whereString[] = "{$val[0]}{$val[1]}:{$val[0]}";
+            } else {
+                if (NULL === $val) {
+                    $whereString[] = "{$key} IS NULL";
                 } else {
-                    if (NULL === $val) {
-                        $whereString[] = "{$key} IS NULL";
-                    } else {
-                        $whereString[] = "{$key}=:{$key}";
-                    }
+                    $whereString[] = "{$key}=:{$key}";
                 }
             }
         }
@@ -499,6 +499,7 @@ class QueryBuilder {
         try {
             $this->stmt = $this->db->prepare($this->buildQueryString('DELETE'));
             $this->bindValues();
+
             if ( ! $this->stmt->execute()) {
                 throw new QueryException('Deletion query failure');
             }
