@@ -60,6 +60,27 @@ if ( ! function_exists('_e')) {
         return NULL;
     }
 }
+if (!function_exists('__')) {
+    /**
+     * Translation echo TODO
+     *
+     * @param        $e
+     * @param string $default
+     *
+     * @return null|string
+     */
+    function _t($e, $default = '') {
+        if (NULL !== $e || $e || ! empty($e)) {
+            return $e;
+        }
+
+        if ($default !== '') {
+            return $default;
+        }
+
+        return NULL;
+    }
+}
 if ( ! function_exists('base_path')) {
     function base_path() {
         return \Poplar\Application::basePath();
