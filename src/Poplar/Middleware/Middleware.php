@@ -2,8 +2,6 @@
 
 
 namespace Poplar\Middleware;
-
-
 use Poplar\Application;
 use Poplar\Exceptions\MiddlewareException;
 use Poplar\Request;

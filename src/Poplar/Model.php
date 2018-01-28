@@ -15,7 +15,7 @@ class Model {
         'created_at',
         'updated_at'
     ];
-    protected      $id;
+    public      $id;
     protected      $exists      = FALSE;
     protected      $table;
     protected      $columns;

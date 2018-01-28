@@ -23,7 +23,8 @@
         "symfony/var-dumper": "v3.3.4",
         "vlucas/phpdotenv": "v2.4.0",
         "tightenco/collect": "v5.5.9",
-        "doctrine/inflector": "v1.2.0"
+        "doctrine/inflector": "v1.2.0",
+        "phpmailer/phpmailer": "v6.0.3"
     },
     "autoload": {
         "files": [

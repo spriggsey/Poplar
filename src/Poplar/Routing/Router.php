@@ -271,13 +271,6 @@ class Router {
         $this->delete("{$basepath}/{id}", "{$controller}@postDelete");
     }
 
-    public function get(string $path, $controller) {
-        $this->makeRoute($path, ['GET'], $controller);
-    }
-
-    public function post($path, $controller) {
-        $this->makeRoute($path, ['POST'], $controller);
-    }
 
     public function bind($url, $slug, $class) {
         $class_string = "App\\Models\\" . $class;
@@ -290,14 +283,6 @@ class Router {
             }
             $this->model_bindings[trim($url, '/')] = (object)[$slug => $object];
         }
-    }
-
-    public function put($path, $controller) {
-        $this->makeRoute($path, ['PUT'], $controller);
-    }
-
-    public function delete($path, $controller) {
-        $this->makeRoute($path, ['DELETE'], $controller);
     }
 
     /**
@@ -356,9 +341,24 @@ class Router {
 
     }
 
+    public function get(string $path, $controller) {
+        $this->makeRoute($path, ['GET'], $controller);
+    }
+
+    public function post($path, $controller) {
+        $this->makeRoute($path, ['POST'], $controller);
+    }
+
     public function patch($path, $controller) {
         $this->makeRoute($path, ['PATCH'], $controller);
     }
 
+    public function put($path, $controller) {
+        $this->makeRoute($path, ['PUT'], $controller);
+    }
+
+    public function delete($path, $controller) {
+        $this->makeRoute($path, ['DELETE'], $controller);
+    }
 
 }

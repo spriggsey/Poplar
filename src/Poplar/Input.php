@@ -19,7 +19,7 @@ class Input {
      *
      * @return string
      */
-    public static function get($name, $default = ''): string {
+    public static function get($name, $default = '') {
         if (array_key_exists($name, self::$data)) {
             return self::$data[$name];
         }

@@ -4,7 +4,7 @@
 namespace Poplar;
 
 
-use Poplar\Auth\Session;
+use App\Models\User;
 use Poplar\Database\QueryBuilder;
 use Poplar\Routing\Router;
 use Whoops\Handler\JsonResponseHandler as WhoopsJson;
@@ -86,11 +86,14 @@ class Application {
         return self::get('config');
     }
 
+    /**
+     * @return bool|User
+     */
     public static function user() {
         try {
             return self::get('user');
         } catch (\Exception $e) {
-            return FALSE;
+            return new User();
         }
     }
 

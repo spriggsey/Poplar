@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Poplar\Auth;
+namespace Poplar;
 
 
 use Poplar\Database\DB;
@@ -19,13 +19,14 @@ class Session {
         return self::$hash ?? $_SESSION['identifier'] ?? $_SESSION['identifier'] = self::generateHash();
     }
 
-    public function store($user_id = FALSE) {
+    public static function store($user_id = FALSE) {
         if ($user_id) {
-            return $this->storeInDB($user_id);
+            return self::storeInDB($user_id);
         }
+        return false;
     }
 
-    private function storeInDB($user_id) {
+    private static function storeInDB($user_id) {
         if ( ! isset($_SESSION)) {
             session_start();
         }

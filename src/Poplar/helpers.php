@@ -1,5 +1,6 @@
 <?php
 
+use Poplar\Input;
 use Poplar\Support\str;
 
 if ( ! function_exists('is_assoc')) {
@@ -121,6 +122,16 @@ if ( ! function_exists('en')) {
 if ( ! function_exists('class_basename')) {
     function class_basename($path) {
         return basename($path);
+    }
+}
+
+if ( ! function_exists('get')) {
+    function get($name) {
+        if (Input::get($name)) {
+            return Input::get($name);
+        } else {
+            return NULL;
+        }
     }
 }
 
