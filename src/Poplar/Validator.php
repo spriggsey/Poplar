@@ -49,41 +49,41 @@ class Validator {
      *
      * ==== USAGES ====
      *
-     * @uses Validator::array()
-     * @uses Validator::size()
-     * @uses Validator::date()
-     * @uses Validator::afterDate()
-     * @uses Validator::beforeDate()
-     * @uses Validator::different()
-     * @uses Validator::digits()
-     * @uses Validator::regex()
-     * @uses Validator::between()
-     * @uses Validator::min()
-     * @uses Validator::max()
-     * @uses Validator::characterLength()
-     * @uses Validator::string()
-     * @uses Validator::nullable()
-     * @uses Validator::exists()
-     * @uses Validator::unique()
-     * @uses Validator::accepted()
-     * @uses Validator::activeUrl()
-     * @uses Validator::alphaDash()
-     * @uses Validator::alphabetic()
-     * @uses Validator::alphanumeric()
-     * @uses Validator::numeric()
-     * @uses Validator::boolean()
-     * @uses Validator::confirmed()
-     * @uses Validator::digitsBetween()
-     * @uses Validator::email()
-     * @uses Validator::same()
-     * @uses Validator::url()
-     * @uses Validator::required()
-     * @uses Validator::requiredWith()
-     * @uses Validator::requiredWithAll()
-     * @uses Validator::requiredWithout()
-     * @uses Validator::requiredWithoutAll()
-     * @uses Validator::requiredUnless()
-     * @uses Validator::requiredIf()
+     * @uses \Poplar\Validator::array()
+     * @uses \Poplar\Validator::size()
+     * @uses \Poplar\Validator::date()
+     * @uses \Poplar\Validator::afterDate()
+     * @uses \Poplar\Validator::beforeDate()
+     * @uses \Poplar\Validator::different()
+     * @uses \Poplar\Validator::digits()
+     * @uses \Poplar\Validator::regex()
+     * @uses \Poplar\Validator::between()
+     * @uses \Poplar\Validator::min()
+     * @uses \Poplar\Validator::max()
+     * @uses \Poplar\Validator::characterLength()
+     * @uses \Poplar\Validator::string()
+     * @uses \Poplar\Validator::nullable()
+     * @uses \Poplar\Validator::exists()
+     * @uses \Poplar\Validator::unique()
+     * @uses \Poplar\Validator::accepted()
+     * @uses \Poplar\Validator::activeUrl()
+     * @uses \Poplar\Validator::alphaDash()
+     * @uses \Poplar\Validator::alphabetic()
+     * @uses \Poplar\Validator::alphanumeric()
+     * @uses \Poplar\Validator::numeric()
+     * @uses \Poplar\Validator::boolean()
+     * @uses \Poplar\Validator::confirmed()
+     * @uses \Poplar\Validator::digitsBetween()
+     * @uses \Poplar\Validator::email()
+     * @uses \Poplar\Validator::same()
+     * @uses \Poplar\Validator::url()
+     * @uses \Poplar\Validator::required()
+     * @uses \Poplar\Validator::requiredWith()
+     * @uses \Poplar\Validator::requiredWithAll()
+     * @uses \Poplar\Validator::requiredWithout()
+     * @uses \Poplar\Validator::requiredWithoutAll()
+     * @uses \Poplar\Validator::requiredUnless()
+     * @uses \Poplar\Validator::requiredIf()
      * ===============
      *
      * @return bool
@@ -135,7 +135,7 @@ class Validator {
      * @throws \Exception
      */
     private function unique($value, $database_table, $column_name, $ignore_id = FALSE): bool {
-        $where_clause = [[$column_name, '=', $this->data_array->$value]];
+        $where_clause = [[$column_name, '=', $this->data_array->get($value)]];
         // set the ignore id, this will allow you to ignore an ID in the table
         if ($ignore_id !== FALSE) {
             $where_clause[] = ['id', '!=', $ignore_id];
@@ -187,7 +187,7 @@ class Validator {
      * @throws \Exception
      */
     private function exists($value, $database_table, $column_name): bool {
-        $where_clause = [[$column_name, '=', $this->data_array->$value]];
+        $where_clause = [[$column_name, '=', $this->data_array->get($value)]];
         // check if exists in the database
         try {
             $output = DB::table($database_table)->where($where_clause)->get();
@@ -215,7 +215,7 @@ class Validator {
     }
 
     private function accepted($value): bool {
-        if ( ! (bool)$this->data_array->$value) {
+        if ( ! (bool)$this->data_array->get($value)) {
             $this->pushError($value, "$value must be accepted");
 
             return FALSE;
@@ -230,7 +230,7 @@ class Validator {
      * @return bool
      */
     private function activeUrl($value): bool {
-        if ( ! checkdnsrr($this->data_array->$value)) {
+        if ( ! checkdnsrr($this->data_array->get($value))) {
             $this->pushError($value, "$value is not an active URL");
 
             return FALSE;
@@ -240,7 +240,7 @@ class Validator {
     }
 
     private function array($value): bool {
-        if ( ! \is_array($this->data_array->$value)) {
+        if ( ! \is_array($this->data_array->get($value))) {
             $this->pushError($value, "$value is not an array.");
 
             return FALSE;
@@ -252,7 +252,7 @@ class Validator {
     private function alphaDash($value): bool {
         // removed any dashes then check for alphanumeric
         // we can remove them as we do not care if they exist in this function
-        $parsed_value = str_replace(['-', '_', ' '], '', $this->data_array->$value);
+        $parsed_value = str_replace(['-', '_', ' '], '', $this->data_array->get($value));
 
         // call the original alphanumeric function as it does the same thing
         if ( ! ctype_alnum($parsed_value)) {
@@ -263,7 +263,7 @@ class Validator {
     }
 
     private function alphabetic($value): bool {
-        if ( ! ctype_alpha($this->data_array->$value)) {
+        if ( ! ctype_alpha($this->data_array->get($value))) {
             $this->pushError($value, "$value contains non alphabetic characters.");
 
             return FALSE;
@@ -273,7 +273,7 @@ class Validator {
     }
 
     private function alphanumeric($value): bool {
-        if ( ! ctype_alnum($this->data_array->$value)) {
+        if ( ! ctype_alnum($this->data_array->get($value))) {
             $this->pushError($value, "$value contains non alphanumeric characters.");
         }
 
@@ -286,7 +286,7 @@ class Validator {
      * @return bool
      */
     private function numeric($value): bool {
-        if ( ! ctype_digit($this->data_array->$value)) {
+        if ( ! ctype_digit($this->data_array->get($value))) {
             $this->pushError($value, "$value is not a numeric value.");
 
             return FALSE;
@@ -324,7 +324,7 @@ class Validator {
      * @return bool
      */
     private function date($value): bool {
-        if ( ! strtotime($this->data_array->$value)) {
+        if ( ! strtotime($this->data_array->get($value))) {
             $this->pushError($value, "$value is not a valid date value");
 
             return FALSE;
@@ -355,7 +355,7 @@ class Validator {
     }
 
     private function between($value, $min, $max): bool {
-        $str_length = \strlen($this->data_array->$value);
+        $str_length = \strlen($this->data_array->get($value));
         if ($str_length < $min || $str_length > $max) {
             $this->pushError($value, "$value is not between the character lengths (min: $min, max: $max)");
 
@@ -366,7 +366,7 @@ class Validator {
     }
 
     private function boolean($value): bool {
-        if ( ! \is_bool($this->data_array->$value)) {
+        if ( ! \is_bool($this->data_array->get($value))) {
             $this->pushError($value, "$value is not a boolean value");
 
             return FALSE;
@@ -384,13 +384,13 @@ class Validator {
      */
     private function confirmed($value): bool {
         $confirmed_value_name = "confirm_$value";
-        if ( ! isset($this->data_array->$confirmed_value_name)) {
+        if ( $this->data_array->get($confirmed_value_name) === null) {
             $this->pushError($value, "$value confirmation is not submitted");
 
             return FALSE;
         }
-        if ($this->data_array->$confirmed_value_name !== $this->data_array->$value) {
-            $this->pushError($value, "$value confirmation does not match the original value");
+        if ($this->data_array->get($confirmed_value_name) !== $this->data_array->get($value)) {
+            $this->pushError($confirmed_value_name, "$value confirmation does not match");
 
             return FALSE;
         }
@@ -405,7 +405,7 @@ class Validator {
      * @return bool
      */
     private function different($value, $target_value): bool {
-        if ($this->data_array->$value === $this->data_array->$target_value) {
+        if ($this->data_array->get($value) === $this->data_array->get($target_value)) {
             $this->pushError($value, "$value cannot be the same as {$target_value}");
 
             return FALSE;
@@ -421,7 +421,7 @@ class Validator {
      * @return bool
      */
     private function digits($value, $length): bool {
-        if (\strlen($this->data_array->$value) !== $length) {
+        if (\strlen($this->data_array->get($value)) !== $length) {
             $this->pushError($value, "$value the digit length is not {$length}");
 
             return FALSE;
@@ -438,7 +438,7 @@ class Validator {
      * @return bool
      */
     private function digitsBetween($value, $min, $max): bool {
-        $value = \strlen($this->data_array->$value);
+        $value = \strlen($this->data_array->get($value));
         if ($value < $min || $value > $max) {
             $this->pushError($value, "$value is not between the digit lengths (min: $min, max: $max)");
 
@@ -454,7 +454,7 @@ class Validator {
      * @return bool
      */
     private function email($value): bool {
-        if ( ! filter_var($this->data_array->$value, FILTER_VALIDATE_EMAIL)) {
+        if ( ! filter_var($this->data_array->get($value), FILTER_VALIDATE_EMAIL)) {
             $this->pushError($value, 'The email provided is not a valid email address');
         }
 
@@ -468,7 +468,7 @@ class Validator {
      * @return bool
      */
     private function max($value, $length): bool {
-        if (\strlen($this->data_array->$value) > $length) {
+        if (\strlen($this->data_array->get($value)) > $length) {
             $this->pushError($value, "$value cannot be larger than $length characters");
 
             return FALSE;
@@ -484,7 +484,8 @@ class Validator {
      * @return bool
      */
     private function min($value, $length): bool {
-        if (\strlen($this->data_array->$value) < $length) {
+
+        if (\strlen($this->data_array->get($value)) < $length) {
             $this->pushError($value, "$value cannot be smaller than $length characters");
 
             return FALSE;
@@ -498,6 +499,7 @@ class Validator {
      * @param $regex
      */
     private function regex($value, $regex) {
+        // TODO
     }
 
     /**
@@ -509,7 +511,7 @@ class Validator {
      */
     private function requiredIf($value, $field, ...$field_values): bool {
         $filtered = array_filter($field_values, function ($field_value) use ($field) {
-            return $this->data_array->$field === $field_value;
+            return $this->data_array->get($field) === $field_value;
         });
         if (\count($filtered) > 0) {
             return $this->required($value);
@@ -524,7 +526,7 @@ class Validator {
      * @return bool
      */
     private function required($value): bool {
-        if (empty($this->data_array->$value)) {
+        if (empty($this->data_array->get($value))) {
             $this->pushError($value, "$value is required");
 
             return FALSE;
@@ -542,7 +544,7 @@ class Validator {
      */
     private function requiredUnless($value, $field, ...$field_values): bool {
         $filtered = array_filter($field_values, function ($field_value) use ($field) {
-            return $this->data_array->$field === $field_value;
+            return $this->data_array->get($field) === $field_value;
         });
         if (\count($filtered) === 0) {
             return $this->required($value);
@@ -555,7 +557,7 @@ class Validator {
         // loop through all fields and check if they are empty
         // if any of the specified fields are empty then we need to check required on the value
         $filtered = array_filter($fields, function ($field) {
-            return empty($this->data_array->$field);
+            return empty($this->data_array->get($field));
         });
         if (\count($filtered) === 0) {
             return $this->required($value);
@@ -575,7 +577,7 @@ class Validator {
     private function requiredWithAll($value, ...$fields): bool {
         // if at least one is empty then it should not require the value
         $filtered = array_filter($fields, function ($field) {
-            return empty($this->data_array->$field);
+            return empty($this->data_array->get($field));
         });
         // check how many are filtered, match them with the other fields
         if (\count($filtered) === \count($fields)) {
@@ -593,7 +595,7 @@ class Validator {
      */
     private function requiredWithout($value, ...$fields): bool {
         $filtered = array_filter($fields, function ($field) {
-            return empty($this->data_array->$field);
+            return empty($this->data_array->get($field));
         });
 
         if (\count($filtered) > 0) {
@@ -611,7 +613,7 @@ class Validator {
      */
     private function requiredWithoutAll($value, ...$fields): bool {
         $filtered = array_filter($fields, function ($field) {
-            return ! empty($this->data_array->$field);
+            return ! empty($this->data_array->get($field));
         });
         // check how many are filtered, match them with the other fields
         if (\count($filtered) === \count($fields)) {
@@ -631,7 +633,7 @@ class Validator {
      * @return bool
      */
     private function same($value, $field): bool {
-        if ($this->data_array->$value ?? NULL !== $this->data_array->$field ?? NULL) {
+        if ($this->data_array->get($value) ?? NULL !== $this->data_array->get($field) ?? NULL) {
             $this->pushError($value, "{$value} has to be the same as {$field}");
 
             return FALSE;
@@ -652,12 +654,12 @@ class Validator {
         // check if the numeric value matches
         // OR
         // check the array count
-        if ((is_numeric($this->data_array->$value)
-            && (int)$this->data_array->$value !== (int)$size)
-            || (\is_string($this->data_array->$value)
-                            && \strlen($this->data_array->$value) !== (int)$size)
-            || (\is_array($this->data_array->$value)
-                && \count($this->data_array->$value) !== (int)$size)
+        if ((is_numeric($this->data_array->get($value))
+                && (int)$this->data_array->get($value) !== (int)$size)
+            || (\is_string($this->data_array->get($value)
+                && \strlen($this->data_array->get($value) !== (int)$size)
+                || (\is_array($this->data_array->get($value)
+                    && \count($this->data_array->get($value)) !== (int)$size))))
         ) {
             $this->pushError($value, "{$value} has to be the same length as {$size}");
 
@@ -706,7 +708,7 @@ class Validator {
      * @return bool
      */
     private function characterLength($value, $max): bool {
-        if (\strlen($this->data_array->$value) > $max) {
+        if (\strlen($this->data_array->get($value)) > $max) {
             $this->pushError($value, "$value exceeds maximum character length ($max)");
 
             return FALSE;

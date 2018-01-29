@@ -30,6 +30,8 @@ class Application {
         // register the database class but we do not connect until required
         $this->registerDatabase();
 
+        Input::retrieveErrorLog();
+
         $user = new User();
         // check user for login
         $user->isLoggedIn();

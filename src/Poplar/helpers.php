@@ -186,3 +186,20 @@ if ( ! function_exists('CSRFInput')) {
         }
     }
 }
+
+if (! function_exists('validateError')) {
+    /**
+     * @param $input_name
+     *
+     * @return array
+     */
+    function validateError($input_name) {
+        // check if this input has validation errors, if yes give them to the screen
+        try {
+            if (isset(Application::get('validation_errors')[$input_name])) {
+                return Application::get('validation_errors')[$input_name];
+            }
+        } catch (RuntimeException $e ) {}
+        return [];
+    }
+}
