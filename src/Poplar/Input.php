@@ -155,8 +155,11 @@ class Input {
     }
 
     public static function storePreviousPage() {
+        if ( ! isset($_SESSION)) {
+            session_start();
+        }
         // first get the previous page from last time.
-        Request::$previous_page = $_SESSION['previous_page'] ?? NULL;
+        Request::$previous_page = $_SESSION['previous_page']??null;
         // then put a new previous page in from this session
         $_SESSION['previous_page'] = Request::getURI();
         return Request::$previous_page;

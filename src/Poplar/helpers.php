@@ -1,5 +1,6 @@
 <?php
 
+use Poplar\Application;
 use Poplar\Input;
 use Poplar\Support\str;
 
@@ -84,7 +85,7 @@ if (!function_exists('__')) {
 }
 if ( ! function_exists('base_path')) {
     function base_path() {
-        return \Poplar\Application::basePath();
+        return Application::basePath();
     }
 }
 if ( ! function_exists('dd')) {
@@ -152,10 +153,10 @@ if ( ! function_exists('view')) {
         $url = str_replace('.', '/', $url);
         $url = trim($url, '/');
         if ($values) {
-            return [\Poplar\Application::basePath() . "/resources/views/{$url}.view.php", $values];
+            return [Application::basePath() . "/resources/views/{$url}.view.php", $values];
         }
 
-        return \Poplar\Application::basePath() . "/resources/views/{$url}.view.php";
+        return Application::basePath() . "/resources/views/{$url}.view.php";
     }
 }
 if ( ! function_exists('database')) {
@@ -163,14 +164,14 @@ if ( ! function_exists('database')) {
      * @return \Poplar\Database\QueryBuilder
      */
     function database() {
-        return \Poplar\Application::database();
+        return Application::database();
     }
 }
 
 if ( ! function_exists('getCSRF')) {
     function getCSRF() {
-        if (\Poplar\Application::get('CSRF')) {
-            return \Poplar\Application::get('CSRF');
+        if (Application::get('CSRF')) {
+            return Application::get('CSRF');
         } else {
             return NULL;
         }
@@ -178,8 +179,8 @@ if ( ! function_exists('getCSRF')) {
 }
 if ( ! function_exists('CSRFInput')) {
     function CSRFInput() {
-        if (\Poplar\Application::get('csrf')) {
-            return "<input type='hidden' name='X-CSRF-TOKEN' value='" . \Poplar\Application::get('CSRF') . "'>";
+        if (Application::get('CSRF')) {
+            return "<input type='hidden' name='X-CSRF-TOKEN' value='" . Application::get('CSRF') . "'>";
         } else {
             return NULL;
         }

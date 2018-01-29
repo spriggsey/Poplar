@@ -5,10 +5,10 @@ namespace Poplar\Middleware;
 
 
 use Poplar\Application;
-use Poplar\Auth\Session;
 use Poplar\Exceptions\MiddlewareException;
 use Poplar\Input;
 use Poplar\Request;
+use Poplar\Session;
 
 class VerifyCSRF extends Middleware {
     public function execute($base_uri) {

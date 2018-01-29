@@ -16,7 +16,11 @@ class Session {
     private static $db_entry;
 
     private static function getLocalHash() {
-        return self::$hash ?? $_SESSION['identifier'] ?? $_SESSION['identifier'] = self::generateHash();
+        if ( ! isset($_SESSION)) {
+            session_start();
+        }
+        // cascade down and check all places that we will store hash, if not set then go to next and populate the parent
+        return  self::$hash ?? self::$hash = $_SESSION['identifier'] ?? self::$hash = $_SESSION['identifier'] = self::generateHash();
     }
 
     public static function store($user_id = FALSE) {
@@ -68,17 +72,17 @@ class Session {
             return FALSE;
         }
         self::$db_entry = $db_check->first();
-        if ($_SESSION['identifier'] !== self::$hash = $db_check->get('hash')) {
+
+        if ($_SESSION['identifier'] !== self::$hash = self::$db_entry->hash) {
             return FALSE;
         }
 
         // if it gets here we need to update the timer on the db as the session is still actively being used.
-        DB::table(self::$table_name)->where(['id' => $db_check->get('id')])
+        DB::table(self::$table_name)->where(['id' => self::$db_entry->id])
             ->update(['updated_at' => date('Y-m-d H:i:s')]);
-
         return [
             'hash'    => self::$hash,
-            'user_id' => $db_check->get('user_id'),
+            'user_id' => self::$db_entry->user_id,
         ];
     }
 

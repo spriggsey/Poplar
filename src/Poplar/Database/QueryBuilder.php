@@ -93,7 +93,12 @@ class QueryBuilder {
     private function preBindValues($params) {
         if (\count($params) === 1) {
             foreach ((array)$params[0] as $key => $val) {
-                $this->value_binds[$key] = $val;
+                // we need to make sure to snip out the detailed where clause
+                if (count($val)>2) {
+                    $this->value_binds[$val[0]] = end($val);
+                } else {
+                    $this->value_binds[$key] = $val;
+                }
             }
         } else {
             $this->value_binds[reset($params)] = end($params);
@@ -234,9 +239,13 @@ class QueryBuilder {
      */
     private function bindValues(array $params = []) {
         if ( ! empty($params)) {
+
             $this->value_binds = array_merge($params, $this->value_binds);
         }
         foreach ($this->value_binds as $key => $value) {
+            if (is_array($value)) {
+                dd($this->value_binds);
+            }
             $this->stmt->bindValue(':' . $key, $value);
         }
     }

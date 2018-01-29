@@ -29,7 +29,13 @@ abstract class Middleware {
             } catch (\Error $e) {
                 throw new MiddlewareException ($e);
             }
-            static::$routes[trim($base_uri, '/')] = $object;
+
+            // exit early if this middleware is already bound on this route
+            if (isset(static::$routes[trim($base_uri, '/')][(new \ReflectionClass($object))->getShortName()])) {
+                return;
+            }
+
+            static::$routes[trim($base_uri, '/')][(new \ReflectionClass($object))->getShortName()] = $object;
         }
     }
 
@@ -51,7 +57,9 @@ abstract class Middleware {
             if (strpos($base_uri, $processed_uri) === 0) {
                 // we then call the execute on the stored route
                 // call this instance of middleware. if it redirects or dies, then there was an issue
-                self::$routes[$uri]->execute($base_uri);
+                foreach (self::$routes[$uri] as $middleware) {
+                    $middleware->execute($base_uri);
+                }
             }
         }
 

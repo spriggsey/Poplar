@@ -91,7 +91,7 @@ class Router {
         // call the closure
         $closure();
         // empty the pre middleware now we are done.
-        $this->pre_middleware_bound = '';
+        $this->pre_middleware_bound = [];
     }
 
     public function namespace($string, $closure) {
@@ -338,7 +338,6 @@ class Router {
         foreach ($this->pre_middleware_bound as $middleware) {
             Middleware::register($path, $middleware);
         }
-
     }
 
     public function get(string $path, $controller) {

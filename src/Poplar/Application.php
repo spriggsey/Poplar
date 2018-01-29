@@ -30,7 +30,13 @@ class Application {
         // register the database class but we do not connect until required
         $this->registerDatabase();
 
-        Application::bind('CSRF', Application::user() ? Session::get('db') : Session::get('local'));
+        $user = new User();
+        // check user for login
+        $user->isLoggedIn();
+        // bind this user to the instance
+        Application::bind('user',$user);
+
+        Application::bind('CSRF', (Application::user()->exists() ? Session::get('db') : Session::get('local')));
     }
 
     /**
@@ -93,7 +99,7 @@ class Application {
         try {
             return self::get('user');
         } catch (\Exception $e) {
-            return new User();
+            return false;
         }
     }
 
