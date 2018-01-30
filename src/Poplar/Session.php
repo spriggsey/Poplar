@@ -34,7 +34,6 @@ class Session {
         if ( ! isset($_SESSION)) {
             session_start();
         }
-        // first generate a hash for this session
         $client_ip = $_SERVER['REMOTE_ADDR'];
 
         // save it into the db then give the hash to the session

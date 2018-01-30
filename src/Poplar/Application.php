@@ -118,16 +118,19 @@ class Application {
         try {
             $router = Router::load('main.routes.php')->pathFind();
 
+            // load user into this space as it should be global
+            $user = Application::user();
+
             if ( ! View::process($router)) {
                 throw new \RuntimeException('View Processing failed');
             }
             require View::getViewFile();
         } catch (\Exception $e) {
-            http_response_code(404);
             if (Config::get('app.debug_mode')) {
                 // throw it if we are in debug mode
                 throw $e;
             }
+            http_response_code(404);
             include view('errors.404');
         }
 
