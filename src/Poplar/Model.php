@@ -15,7 +15,7 @@ class Model {
         'created_at',
         'updated_at'
     ];
-    public      $id;
+    public         $id;
     protected      $exists      = FALSE;
     protected      $table;
     protected      $columns;
@@ -102,7 +102,7 @@ class Model {
             return new static();
         }
 
-        $object->setExists(TRUE);
+        $object->setExists();
 
         return $object;
     }
@@ -145,7 +145,28 @@ class Model {
         }
 
         // set that the object exists in the DB
-        $object->setExists(TRUE);
+        $object->setExists();
+
+        return $object;
+    }
+
+    /**
+     * @param string $identifier
+     * @param array  $values
+     *
+     * @return Model
+     *
+     */
+    public static function firstOrCreate($identifier, $values) {
+        $object = $object = static::buildModel()->where([$identifier => $values[$identifier]])->first();
+
+        if (NULL === $object) {
+            // create a new entry in the database for this model
+            $id = static::buildModel()->insertGetId($values);
+            return static::buildModel()->where(['id'=> $id])->first()->setExists();
+        }
+
+        $object->setExists();
 
         return $object;
     }
@@ -203,7 +224,7 @@ class Model {
         $arr = $this->generateSaveArray();
 
         if ($this->{$this->primary_key} = static::buildModel()->insertGetId($arr)) {
-            $this->setExists(TRUE);
+            $this->setExists();
 
             return TRUE;
         }
@@ -251,7 +272,7 @@ class Model {
      *
      * @return static
      */
-    public function setExists($boolean) {
+    public function setExists($boolean = TRUE) {
         $this->exists = $boolean;
 
         return $this;
