@@ -22,6 +22,11 @@ class Model {
     protected      $QB;
     protected      $primary_key = 'id';
 
+    /**
+     * Model constructor.
+     *
+     * @throws \ReflectionException
+     */
     public function __construct() {
         // set the table if empty
         $this->table   = ( ! empty($this->table)) ?: static::table();
@@ -52,10 +57,12 @@ class Model {
     }
 
     /**
+     * @param array $columns
+     *
      * @return Model[]|Support\Collection
      */
-    public static function all() {
-        return static::buildModel()->get();
+    public static function all($columns = ['*']) {
+        return static::buildModel()->get($columns);
     }
 
     private static function buildModel(): Database\QueryBuilder {
@@ -95,6 +102,7 @@ class Model {
      * @param $id
      *
      * @return mixed|static
+     * @throws \ReflectionException
      */
     public static function find($id) {
         $object = static::buildModel()->where(['id' => $id])->first();
@@ -134,6 +142,7 @@ class Model {
      *
      * @return static
      * @throws ModelException
+     * @throws \ReflectionException
      */
     public static function findOrFail($id) {
         $object = $object = static::buildModel()->where(['id' => $id])->first();
@@ -156,6 +165,7 @@ class Model {
      *
      * @return Model
      *
+     * @throws Database\QueryException
      */
     public static function firstOrCreate($identifier, $values) {
         $object = $object = static::buildModel()->where([$identifier => $values[$identifier]])->first();
@@ -163,7 +173,8 @@ class Model {
         if (NULL === $object) {
             // create a new entry in the database for this model
             $id = static::buildModel()->insertGetId($values);
-            return static::buildModel()->where(['id'=> $id])->first()->setExists();
+
+            return static::buildModel()->where(['id' => $id])->first()->setExists();
         }
 
         $object->setExists();
@@ -177,6 +188,7 @@ class Model {
      * @param $ids
      *
      * @return int
+     * @throws Database\QueryException
      */
     public static function destroy($ids): int {
         $ids = is_array($ids) ? $ids : func_get_args();
@@ -186,13 +198,56 @@ class Model {
         return static::buildModel()->whereIn($identifier, $ids)->delete();
     }
 
+    /**
+     * @param array $data
+     *
+     * @return bool|Model
+     * @throws \ReflectionException
+     * @throws Database\QueryException
+     */
+    public static function create(array $data) {
+        $model = new self();
+        foreach ($data as $key => $value) {
+            $model->$key = $value;
+        }
+        if ( ! $model->add()) {
+            return FALSE;
+        }
+
+        return $model;
+    }
+
+    /**
+     * @param array $data
+     * @param       $id
+     *
+     * @return Model
+     * @throws ModelException
+     * @throws \ReflectionException
+     * @throws Database\QueryException
+     */
+    public static function update(array $data,$id) {
+        $model = self::findOrFail($id);
+        foreach ($data as $key => $value) {
+            $model->$key = $value;
+        }
+        $model->save();
+        return $model;
+    }
+
+
     private static function findIdentifier() {
         return 'id';
     }
 
+    /**
+     * @return bool
+     * @throws Database\QueryException
+     * @throws ModelException
+     */
     public function save(): bool {
         if ($this->exists()) {
-            return $this->update();
+            return $this->updateModel();
         }
 
         return $this->add();
@@ -205,7 +260,16 @@ class Model {
         return $this->exists;
     }
 
-    public function update(): bool {
+    public function get($columns = ['*']) {
+        return self::all($columns);
+    }
+
+    /**
+     * @return bool
+     * @throws Database\QueryException
+     * @throws ModelException
+     */
+    private function updateModel(): bool {
         if ( ! $this->exists()) {
             return FALSE;
         }
@@ -218,6 +282,7 @@ class Model {
 
     /**
      * @return bool
+     * @throws Database\QueryException
      */
     private function add() {
 
@@ -301,5 +366,6 @@ class Model {
         }
 
     }
+
 
 }
