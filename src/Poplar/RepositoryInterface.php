@@ -14,7 +14,7 @@ interface RepositoryInterface {
 
     public function delete($id);
 
-    public function find($id, $columns = ['*']);
+    public function find($id);
 
     public function findBy($field, $value, $columns = ['*']);
 }
