@@ -10,17 +10,17 @@ use Poplar\Exceptions\ModelException;
 use Poplar\Support\Str;
 
 class Model {
-    static private $untouchable = [
+    static private   $untouchable = [
         'id',
         'created_at',
         'updated_at'
     ];
-    public         $id;
-    protected      $exists      = FALSE;
-    protected      $table;
-    protected      $columns;
-    protected      $QB;
-    protected      $primary_key = 'id';
+    public           $id;
+    protected        $exists      = FALSE;
+    static protected $table;
+    protected        $columns;
+    protected        $QB;
+    protected        $primary_key = 'id';
 
     /**
      * Model constructor.
@@ -29,10 +29,11 @@ class Model {
      */
     public function __construct() {
         // set the table if empty
-        $this->table   = ( ! empty($this->table)) ?: static::table();
+        $table         = static::table();
         $this->columns = ( ! empty($this->columns)) ?: static::getColumns();
 
-        $this->QB = DB::table($this->table)->bindModel(static::class);
+
+        $this->QB = DB::table($table)->bindModel(static::class);
     }
 
     /**
@@ -42,6 +43,10 @@ class Model {
      * @throws \ReflectionException
      */
     public static function table(): string {
+        if ( ! empty(static::$table)) {
+            return static::$table;
+        }
+
         $reflect = new \ReflectionClass(static::class);
         $lower   = Str::lower($reflect->getShortName());
 
@@ -49,7 +54,7 @@ class Model {
     }
 
     private static function getColumns() {
-        $table       = self::table();
+        $table       = static::table();
         $db_driver   = DB::driver();
         $translation = Translation::getTranslation($db_driver);
 
@@ -206,7 +211,8 @@ class Model {
      * @throws Database\QueryException
      */
     public static function create(array $data) {
-        $model = new self();
+        $model = new static();
+        dd($model);
         foreach ($data as $key => $value) {
             $model->$key = $value;
         }
@@ -226,12 +232,13 @@ class Model {
      * @throws \ReflectionException
      * @throws Database\QueryException
      */
-    public static function update(array $data,$id) {
-        $model = self::findOrFail($id);
+    public static function update(array $data, $id) {
+        $model = static::findOrFail($id);
         foreach ($data as $key => $value) {
             $model->$key = $value;
         }
         $model->save();
+
         return $model;
     }
 
@@ -261,7 +268,7 @@ class Model {
     }
 
     public function get($columns = ['*']) {
-        return self::all($columns);
+        return static::all($columns);
     }
 
     /**
@@ -320,7 +327,7 @@ class Model {
     private function generateSaveArray(): array {
         $out = [];
         foreach ($this->columns as $column) {
-            if (in_array($column, self::$untouchable)) {
+            if (in_array($column, static::$untouchable)) {
                 continue;
             }
             if ( ! isset($this->$column)) {
