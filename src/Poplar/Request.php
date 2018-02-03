@@ -129,6 +129,12 @@ class Request {
             return TRUE;
         }
 
+        try {
+            return Application::get('isAPI');
+        } catch (\RuntimeException $e) {
+            // continue here as its not set and we need to try other things
+        }
+
         return FALSE;
     }
 
