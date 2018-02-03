@@ -10,7 +10,7 @@ use Poplar\Exceptions\ModelException;
 use Poplar\Support\Str;
 
 class Model {
-    static private   $untouchable = [
+    static protected $untouchable = [
         'id',
         'created_at',
         'updated_at'
