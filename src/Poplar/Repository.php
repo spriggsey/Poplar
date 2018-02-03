@@ -30,7 +30,8 @@ abstract class Repository implements RepositoryInterface {
      * @throws RepositoryException
      */
     public function makeModel() {
-        $model = new $this->model();
+        $model_name = $this->model();
+        $model      = new $model_name;
 
         if (!$model instanceof Model) {
             throw new RepositoryException("Class {$this->model()} must be an instance of \\Poplar\\Model");
